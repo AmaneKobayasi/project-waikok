@@ -214,6 +214,21 @@ function formatIDR(n: number) {
   }).format(n);
 }
 
+/** Indonesian 3-letter month abbreviations used in the mock event dates
+ *  ("12 Sep 2026"), so "Tanggal terdekat" can sort chronologically instead
+ *  of falling back to alphabetical order. */
+const ID_MONTHS: Record<string, number> = {
+  Jan: 0, Feb: 1, Mar: 2, Apr: 3, Mei: 4, Jun: 5,
+  Jul: 6, Agu: 7, Sep: 8, Okt: 9, Nov: 10, Des: 11,
+};
+
+function parseEventDate(dateStr: string): number {
+  const [day, mon, year] = dateStr.split(" ");
+  const month = ID_MONTHS[mon] ?? 0;
+  const time = new Date(Number(year), month, Number(day)).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
 const TONE_STYLES: Record<EventItem["tone"], string> = {
   espresso: "bg-[#241209] text-[#f4ead9]",
   clay: "bg-[#3a1c0f] text-[#f4ead9]",
@@ -273,7 +288,7 @@ export default function ConcertGoPage() {
     }).sort((a, b) => {
       if (sort === "Harga terendah") return a.priceFrom - b.priceFrom;
       if (sort === "Harga tertinggi") return b.priceFrom - a.priceFrom;
-      return a.title.localeCompare(b.title); // "Tanggal terdekat" fallback (mock order)
+      return parseEventDate(a.date) - parseEventDate(b.date); // "Tanggal terdekat": kronologis asli
     });
   }, [query, genre, city, sort]);
 
@@ -629,6 +644,18 @@ function SearchHero(props: {
 
   const showDropdown = isOpen && query.trim().length > 0 && suggestions.length > 0;
 
+  const activeFilterCount = [
+    genre !== "Semua Genre",
+    city !== "Semua Kota",
+    sort !== "Tanggal terdekat",
+  ].filter(Boolean).length;
+
+  function resetFilters() {
+    setGenre("Semua Genre");
+    setCity("Semua Kota");
+    setSort("Tanggal terdekat");
+  }
+
   function applySuggestion(s: Suggestion) {
     if (s.kind === "city") {
       setCity(s.label);
@@ -755,9 +782,28 @@ function SearchHero(props: {
       </div>
 
       <div className="mx-auto mt-4 flex max-w-2xl flex-wrap items-center justify-center gap-2 text-sm">
-        <span className="flex items-center gap-1 rounded-full border border-[#e6d9bf] bg-white/60 px-3 py-1.5 text-[#4a3a26]">
-          <IconFilter /> Filter
-        </span>
+        <button
+          type="button"
+          onClick={resetFilters}
+          disabled={activeFilterCount === 0}
+          title={activeFilterCount > 0 ? "Hapus semua filter" : "Belum ada filter aktif"}
+          className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 transition-colors ${
+            activeFilterCount > 0
+              ? "border-[#d9691f] bg-[#d9691f] text-white hover:bg-[#c15f1b]"
+              : "cursor-default border-[#e6d9bf] bg-white/60 text-[#4a3a26]"
+          }`}
+        >
+          <IconFilter />
+          Filter
+          {activeFilterCount > 0 && (
+            <>
+              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-white px-1 text-[10px] font-semibold text-[#d9691f]">
+                {activeFilterCount}
+              </span>
+              <span className="text-xs underline underline-offset-2">Reset</span>
+            </>
+          )}
+        </button>
 
         <select
           value={genre}

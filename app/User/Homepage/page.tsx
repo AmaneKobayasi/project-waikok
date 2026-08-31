@@ -471,7 +471,7 @@ function UserMenu() {
               <p className="text-xs text-[#8a7a63]">{CURRENT_USER.email}</p>
             </div>
             <nav className="py-1 text-sm text-[#4a3a26]">
-              <MenuLink href="/profil" icon={<IconUser />} label="Profil Saya" />
+              <MenuLink href="/User/Profile" icon={<IconUser />} label="Profil Saya" />
               <MenuLink href="/tiket-saya" icon={<IconTicket />} label="Tiket Saya" />
               <MenuLink href="/favorit" icon={<IconHeart />} label="Favorit Saya" />
               <MenuLink href="/pengaturan" icon={<IconSettings />} label="Pengaturan" />
