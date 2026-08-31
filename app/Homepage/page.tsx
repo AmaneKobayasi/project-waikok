@@ -1,25 +1,40 @@
 "use client";
 
 /**
- * ConcertGo — Homepage
- * Single-file Next.js page (App Router: app/page.tsx)
+ * ConcertGo — Beranda (logged-in homepage)
+ * Single-file Next.js page (App Router: app/beranda/page.tsx)
  *
- * Requires Tailwind CSS to be set up in the project (default with
- * `npx create-next-app@latest --tailwind`).
+ * This is the landing page's content, adapted for a signed-in user:
+ *  - Header's "Masuk" button is replaced with a user account menu
+ *    (avatar, name, dropdown with Profil / Tiket Saya / Favorit / Keluar)
+ *  - A personalized greeting strip sits right under the header
+ *  - A new "Tiket Saya" section shows the user's upcoming purchased
+ *    tickets (mock data)
+ *  - Everything else (hero carousel, category rail, search, event
+ *    sections, promo banner, testimonials, Why ConcertGo, footer) is
+ *    identical to app/page.tsx so the two feel like one product.
  *
- * Fonts: this file expects two CSS variables to be available globally —
- *   --font-display  (a serif, e.g. "Fraunces" or "Source Serif 4")
- *   --font-body     (a grotesk, e.g. "Inter" or "Plus Jakarta Sans")
- * See the "SETUP NOTES" comment at the very bottom of this file for the
- * two-line addition to app/layout.tsx that wires these up with next/font.
+ * Requires the same setup as the other pages: Tailwind CSS, the
+ * --font-display / --font-body variables in app/layout.tsx, and the
+ * logo at public/image/Logo.png.
  */
 
 import type { CSSProperties, JSX } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 
 /* ------------------------------------------------------------------ */
-/*  Mock data                                                         */
+/*  Mock current user — replace with your real session/auth data       */
+/* ------------------------------------------------------------------ */
+
+const CURRENT_USER = {
+  name: "Raka Pratama",
+  email: "raka.pratama@email.com",
+  initial: "R",
+};
+
+/* ------------------------------------------------------------------ */
+/*  Mock data                                                          */
 /* ------------------------------------------------------------------ */
 
 type Category =
@@ -45,6 +60,17 @@ type EventItem = {
   priceFrom: number;
   blurb: string;
   tone: "espresso" | "clay" | "olive";
+};
+
+type MyTicket = {
+  id: string;
+  eventTitle: string;
+  venue: string;
+  date: string;
+  time: string;
+  category: string;
+  qty: number;
+  status: "Aktif" | "Menunggu Pembayaran";
 };
 
 const CATEGORIES: { label: Category; icon: JSX.Element }[] = [
@@ -188,6 +214,29 @@ const EVENTS: EventItem[] = [
   },
 ];
 
+const MY_TICKETS: MyTicket[] = [
+  {
+    id: "t1",
+    eventTitle: "Senja Orchestra",
+    venue: "Istora Senayan, Jakarta",
+    date: "12 Sep 2026",
+    time: "19:00 WIB",
+    category: "VIP",
+    qty: 2,
+    status: "Aktif",
+  },
+  {
+    id: "t2",
+    eventTitle: "Kota Tua Jazz Night",
+    venue: "Taman Fatahillah, Jakarta",
+    date: "27 Sep 2026",
+    time: "18:30 WIB",
+    category: "Festival",
+    qty: 1,
+    status: "Menunggu Pembayaran",
+  },
+];
+
 const GENRES = Array.from(new Set(EVENTS.map((e) => e.genre)));
 const CITIES = Array.from(new Set(EVENTS.map((e) => e.city)));
 
@@ -220,42 +269,16 @@ const TONE_STYLES: Record<EventItem["tone"], string> = {
   olive: "bg-[#2a2113] text-[#f4ead9]",
 };
 
-/** Split `text` around the first case-insensitive match of `query` so the
- *  matched part can be rendered in bold — the classic "search suggestion"
- *  highlight treatment. */
-function splitMatch(text: string, query: string) {
-  if (!query.trim()) return { before: text, match: "", after: "" };
-  const i = text.toLowerCase().indexOf(query.trim().toLowerCase());
-  if (i === -1) return { before: text, match: "", after: "" };
-  return {
-    before: text.slice(0, i),
-    match: text.slice(i, i + query.trim().length),
-    after: text.slice(i + query.trim().length),
-  };
-}
-
-function Highlighted({ text, query }: { text: string; query: string }) {
-  const { before, match, after } = splitMatch(text, query);
-  if (!match) return <>{text}</>;
-  return (
-    <>
-      {before}
-      <span className="text-[#d9691f]">{match}</span>
-      {after}
-    </>
-  );
-}
-
 /* ------------------------------------------------------------------ */
 /*  Page                                                               */
 /* ------------------------------------------------------------------ */
 
-export default function ConcertGoPage() {
+export default function ConcertGoBerandaPage() {
   const [query, setQuery] = useState("");
   const [genre, setGenre] = useState<string>("Semua Genre");
   const [city, setCity] = useState<string>("Semua Kota");
   const [sort, setSort] = useState<string>("Tanggal terdekat");
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [favorites, setFavorites] = useState<Set<string>>(new Set(["ombak-festival", "malam-metal"]));
   const [promoIndex, setPromoIndex] = useState(0);
 
   const filtered = useMemo(() => {
@@ -289,15 +312,15 @@ export default function ConcertGoPage() {
     });
   }
 
-  function jumpToResults() {
-    document.getElementById("konser")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
   return (
     <div id="top" className="min-h-screen bg-[#f6efe1] font-[var(--font-body,ui-sans-serif)] text-[#241608]">
       <SiteHeader />
 
       <main>
+        <WelcomeStrip />
+
+        <MyTicketsSection />
+
         <HeroCarousel index={promoIndex} setIndex={setPromoIndex} />
 
         <CategoryRail />
@@ -312,13 +335,12 @@ export default function ConcertGoPage() {
           sort={sort}
           setSort={setSort}
           resultCount={filtered.length}
-          onSubmit={jumpToResults}
         />
 
         <div id="konser">
           <EventSection
             id="rekomendasi"
-            title="Rekomendasi"
+            title="Rekomendasi Untukmu"
             events={recommended}
             favorites={favorites}
             onToggleFavorite={toggleFavorite}
@@ -354,7 +376,7 @@ export default function ConcertGoPage() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Header                                                             */
+/*  Header — same nav, but "Masuk" is replaced with a user menu        */
 /* ------------------------------------------------------------------ */
 
 const NAV_LINKS = [
@@ -416,14 +438,153 @@ function SiteHeader() {
           ))}
         </nav>
 
-        <Link
-          href="/Sign-in"
-          className="rounded-full border-2 border-[#241608] bg-[#241608] px-5 py-2 text-sm font-medium text-[#f6efe1] transition-colors hover:bg-transparent hover:text-[#241608]"
-        >
-          Masuk
-        </Link>
+        <UserMenu />
       </div>
     </header>
+  );
+}
+
+function UserMenu() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 rounded-full border border-[#e6d9bf] bg-white/70 py-1 pl-1 pr-3 transition-colors hover:border-[#d9691f]"
+      >
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#d9691f] text-sm font-semibold text-[#f6efe1]">
+          {CURRENT_USER.initial}
+        </span>
+        <span className="hidden text-sm font-medium text-[#241608] sm:inline">
+          {CURRENT_USER.name.split(" ")[0]}
+        </span>
+        <IconChevronDown className={`transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-2xl border border-[#e6d9bf] bg-white shadow-[0_20px_45px_rgba(36,22,8,0.18)]">
+            <div className="border-b border-[#e6d9bf] px-4 py-3">
+              <p className="text-sm font-semibold text-[#241608]">{CURRENT_USER.name}</p>
+              <p className="text-xs text-[#8a7a63]">{CURRENT_USER.email}</p>
+            </div>
+            <nav className="py-1 text-sm text-[#4a3a26]">
+              <MenuLink href="/profil" icon={<IconUser />} label="Profil Saya" />
+              <MenuLink href="/tiket-saya" icon={<IconTicket />} label="Tiket Saya" />
+              <MenuLink href="/favorit" icon={<IconHeart />} label="Favorit Saya" />
+              <MenuLink href="/pengaturan" icon={<IconSettings />} label="Pengaturan" />
+            </nav>
+            <div className="border-t border-[#e6d9bf] py-1">
+              <Link
+                href="/sign-in"
+                className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-[#c94f6d] transition-colors hover:bg-[#fdf2ee]"
+              >
+                <IconLogout /> Keluar
+              </Link>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function MenuLink({ href, icon, label }: { href: string; icon: JSX.Element; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-2.5 px-4 py-2.5 transition-colors hover:bg-[#f6efe1]"
+    >
+      <span className="text-[#8a7a63]">{icon}</span>
+      {label}
+    </Link>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Welcome strip — personalized greeting                              */
+/* ------------------------------------------------------------------ */
+
+function WelcomeStrip() {
+  const activeTickets = MY_TICKETS.filter((t) => t.status === "Aktif").length;
+  const firstName = CURRENT_USER.name.split(" ")[0];
+
+  return (
+    <section className="mx-auto max-w-7xl px-6 pt-8">
+      <div className="flex flex-col items-start justify-between gap-3 rounded-3xl border border-[#e6d9bf] bg-[#f1e6d0] px-6 py-5 sm:flex-row sm:items-center">
+        <div>
+          <h1 className="font-[var(--font-display,serif)] text-xl text-[#241608]">
+            Halo, {firstName}! 👋
+          </h1>
+          <p className="mt-1 text-sm text-[#5a4a35]">
+            Kamu punya {activeTickets} tiket aktif dan {MY_TICKETS.length - activeTickets} pesanan
+            menunggu pembayaran. Yuk cek konser baru minggu ini.
+          </p>
+        </div>
+        <a
+          href="#tiket-saya"
+          className="rounded-full bg-[#241608] px-5 py-2 text-sm font-medium text-[#f6efe1] transition-transform hover:scale-[1.03] active:scale-95"
+        >
+          Lihat Tiket Saya
+        </a>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  My tickets section                                                 */
+/* ------------------------------------------------------------------ */
+
+function MyTicketsSection() {
+  return (
+    <section id="tiket-saya" className="mx-auto max-w-7xl scroll-mt-24 px-6 py-10">
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="font-[var(--font-display,serif)] text-2xl">Tiket Saya</h2>
+        <Link href="/tiket-saya" className="text-sm font-medium text-[#b5772f] hover:text-[#d9691f]">
+          Lihat semua →
+        </Link>
+      </div>
+
+      {MY_TICKETS.length === 0 ? (
+        <p className="text-sm text-[#8a7a63]">Kamu belum punya tiket. Yuk cari konser favoritmu!</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          {MY_TICKETS.map((t) => (
+            <div
+              key={t.id}
+              className="flex items-center gap-4 rounded-3xl border border-[#e6d9bf] bg-white/70 p-5 transition-all hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#241209] text-[#f6efe1]">
+                <IconTicketLarge />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-[var(--font-display,serif)] text-base text-[#241608]">
+                  {t.eventTitle}
+                </p>
+                <p className="mt-0.5 text-xs text-[#8a7a63]">
+                  {t.venue} · {t.date}, {t.time}
+                </p>
+                <p className="mt-1 text-xs text-[#5a4a35]">
+                  {t.category} × {t.qty}
+                </p>
+              </div>
+              <span
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
+                  t.status === "Aktif"
+                    ? "bg-[#e6f4ea] text-[#1f5c37]"
+                    : "bg-[#fdf1e0] text-[#8a5a12]"
+                }`}
+              >
+                {t.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -440,7 +601,7 @@ function HeroCarousel({
 }) {
   const slides = 3;
   return (
-    <section className="mx-auto max-w-7xl px-6 pt-10">
+    <section className="mx-auto max-w-7xl px-6 pt-6">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-[1.6fr_1fr]">
         <div className="relative h-[220px] overflow-hidden rounded-3xl bg-gradient-to-br from-[#3a1c0f] via-[#241209] to-[#120a05] md:h-[300px]">
           <div className="absolute inset-0 flex items-end p-6">
@@ -522,75 +683,6 @@ function CategoryRail() {
 /*  Search hero                                                        */
 /* ------------------------------------------------------------------ */
 
-/** How many rows the live suggestion dropdown shows at most. */
-const MAX_SUGGESTIONS = 6;
-
-type Suggestion = {
-  key: string;
-  kind: "event" | "city" | "genre";
-  label: string;
-  meta?: string;
-  event?: EventItem;
-};
-
-function buildSuggestions(query: string): Suggestion[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return [];
-
-  const results: Suggestion[] = [];
-
-  // Matching events (by title, artist, or venue) surface first.
-  for (const e of EVENTS) {
-    const hit =
-      e.title.toLowerCase().includes(q) ||
-      e.artist.toLowerCase().includes(q) ||
-      e.venue.toLowerCase().includes(q);
-    if (hit) {
-      results.push({
-        key: `event-${e.id}`,
-        kind: "event",
-        label: e.title,
-        meta: `${e.artist} · ${e.venue}, ${e.city}`,
-        event: e,
-      });
-    }
-  }
-
-  // Then matching cities, so "band..." style location searches work too.
-  for (const c of CITIES) {
-    if (c.toLowerCase().includes(q) && !results.some((r) => r.kind === "city" && r.label === c)) {
-      const count = EVENTS.filter((e) => e.city === c).length;
-      results.push({
-        key: `city-${c}`,
-        kind: "city",
-        label: c,
-        meta: `${count} konser`,
-      });
-    }
-  }
-
-  // Then matching genres.
-  for (const g of GENRES) {
-    if (g.toLowerCase().includes(q)) {
-      const count = EVENTS.filter((e) => e.genre === g).length;
-      results.push({
-        key: `genre-${g}`,
-        kind: "genre",
-        label: g,
-        meta: `${count} konser`,
-      });
-    }
-  }
-
-  return results.slice(0, MAX_SUGGESTIONS);
-}
-
-function SuggestionIcon({ kind }: { kind: Suggestion["kind"] }) {
-  if (kind === "city") return <IconPinSmall />;
-  if (kind === "genre") return <IconMusic />;
-  return <IconSearch />;
-}
-
 function SearchHero(props: {
   query: string;
   setQuery: (v: string) => void;
@@ -601,157 +693,31 @@ function SearchHero(props: {
   sort: string;
   setSort: (v: string) => void;
   resultCount: number;
-  onSubmit: () => void;
 }) {
-  const { query, setQuery, genre, setGenre, city, setCity, sort, setSort, resultCount, onSubmit } = props;
-
-  const [isOpen, setIsOpen] = useState(false);
-  const [highlightIndex, setHighlightIndex] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const suggestions = useMemo(() => buildSuggestions(query), [query]);
-
-  // Reset the keyboard-highlighted row whenever the suggestion list changes.
-  useEffect(() => {
-    setHighlightIndex(0);
-  }, [query]);
-
-  // Close the dropdown on outside click (keyboard users still get Escape).
-  useEffect(() => {
-    function handlePointerDown(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, []);
-
-  const showDropdown = isOpen && query.trim().length > 0 && suggestions.length > 0;
-
-  function applySuggestion(s: Suggestion) {
-    if (s.kind === "city") {
-      setCity(s.label);
-      setQuery("");
-    } else if (s.kind === "genre") {
-      setGenre(s.label);
-      setQuery("");
-    } else {
-      setQuery(s.label);
-    }
-    setIsOpen(false);
-    onSubmit();
-  }
-
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (!showDropdown) {
-      if (e.key === "Enter") onSubmit();
-      return;
-    }
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setHighlightIndex((i) => (i + 1) % suggestions.length);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setHighlightIndex((i) => (i - 1 + suggestions.length) % suggestions.length);
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      applySuggestion(suggestions[highlightIndex]);
-    } else if (e.key === "Escape") {
-      setIsOpen(false);
-    }
-  }
-
+  const { query, setQuery, genre, setGenre, city, setCity, sort, setSort, resultCount } = props;
   return (
     <section className="mx-auto max-w-3xl px-6 pb-16 text-center">
       <p className="text-xs font-medium uppercase tracking-[0.25em] text-[#b5772f]">
         Tiket resmi · Tanpa calo
       </p>
-      <h1 className="mt-4 font-[var(--font-display,serif)] text-4xl leading-tight text-[#241608] md:text-5xl">
+      <h2 className="mt-4 font-[var(--font-display,serif)] text-4xl leading-tight text-[#241608] md:text-5xl">
         Konser favoritmu, satu tiket lagi.
-      </h1>
+      </h2>
       <p className="mx-auto mt-4 max-w-md text-[#5a4a35]">
         Temukan dan pesan tiket konser dari berbagai kota di Indonesia, langsung dari genggamanmu.
       </p>
 
-      <div ref={containerRef} className="relative mx-auto mt-8 max-w-xl">
-        <div className="flex items-center gap-2 rounded-full border border-[#e6d9bf] bg-white/70 p-2 pl-5 shadow-sm">
-          <IconSearch />
-          <input
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setIsOpen(true);
-            }}
-            onFocus={() => setIsOpen(true)}
-            onKeyDown={handleKeyDown}
-            placeholder="Cari artis, venue, atau kota..."
-            role="combobox"
-            aria-expanded={showDropdown}
-            aria-controls="search-suggestions"
-            aria-autocomplete="list"
-            className="flex-1 bg-transparent text-sm text-[#241608] placeholder:text-[#8a7a63] focus:outline-none"
-          />
-          {query && (
-            <button
-              type="button"
-              aria-label="Bersihkan pencarian"
-              onClick={() => {
-                setQuery("");
-                setIsOpen(false);
-              }}
-              className="shrink-0 rounded-full px-1.5 py-1 text-[#8a7a63] transition-colors hover:text-[#241608]"
-            >
-              ✕
-            </button>
-          )}
-          <button
-            onClick={onSubmit}
-            className="rounded-full bg-[#241608] px-5 py-2.5 text-sm font-medium text-[#f6efe1] transition-transform hover:scale-[1.03] active:scale-95"
-          >
-            Cari
-          </button>
-        </div>
-
-        {/* Live suggestion dropdown — mirrors a typical search-box autocomplete. */}
-        {showDropdown && (
-          <ul
-            id="search-suggestions"
-            role="listbox"
-            className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-2xl border border-[#e6d9bf] bg-white text-left shadow-xl"
-          >
-            {suggestions.map((s, i) => (
-              <li key={s.key} role="option" aria-selected={i === highlightIndex}>
-                <button
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onMouseEnter={() => setHighlightIndex(i)}
-                  onClick={() => applySuggestion(s)}
-                  className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                    i === highlightIndex ? "bg-[#f6efe1]" : "bg-white"
-                  }`}
-                >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#efe4cf] text-[#8a7a63]">
-                    <SuggestionIcon kind={s.kind} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[#241608]">
-                      <Highlighted text={s.label} query={query} />
-                    </span>
-                    {s.meta && (
-                      <span className="block truncate text-xs text-[#8a7a63]">{s.meta}</span>
-                    )}
-                  </span>
-                  {s.kind !== "event" && (
-                    <span className="shrink-0 text-[10px] uppercase tracking-wide text-[#b5772f]">
-                      {s.kind === "city" ? "Kota" : "Genre"}
-                    </span>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+      <div className="mx-auto mt-8 flex max-w-xl items-center gap-2 rounded-full border border-[#e6d9bf] bg-white/70 p-2 pl-5 shadow-sm">
+        <IconSearch />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Cari artis, venue, atau kota..."
+          className="flex-1 bg-transparent text-sm text-[#241608] placeholder:text-[#8a7a63] focus:outline-none"
+        />
+        <button className="rounded-full bg-[#241608] px-5 py-2.5 text-sm font-medium text-[#f6efe1] transition-transform hover:scale-[1.03] active:scale-95">
+          Cari
+        </button>
       </div>
 
       <div className="mx-auto mt-4 flex max-w-2xl flex-wrap items-center justify-center gap-2 text-sm">
@@ -939,9 +905,6 @@ function AnnouncementBanner() {
 function TestimonialMarquee() {
   const palette = ["bg-[#e0a340] text-[#241608]", "bg-[#2a1a0d] text-[#f6efe1]"];
 
-  // Repeat the full testimonial list several times per row so the strip is
-  // always wider than the viewport (even on ultra-wide monitors) and the
-  // loop never runs out or visibly "restarts".
   const REPEATS = 4;
   const translatePercent = 100 / REPEATS;
 
@@ -1266,9 +1229,59 @@ function IconFilter() {
 }
 function IconUser() {
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <circle cx="12" cy="8" r="4" />
       <path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6" strokeLinecap="round" />
+    </svg>
+  );
+}
+function IconTicket() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3" y="7" width="18" height="12" rx="2.5" />
+      <path d="M3 12h18" strokeDasharray="1.5 2.2" />
+    </svg>
+  );
+}
+function IconTicketLarge() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <rect x="3" y="7" width="18" height="12" rx="2.5" />
+      <path d="M3 12h18" strokeDasharray="1.5 2.2" />
+    </svg>
+  );
+}
+function IconSettings() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="12" cy="12" r="3" />
+      <path
+        d="M19.4 13a7.5 7.5 0 0 0 0-2l2-1.5-2-3.4-2.3.9a7.6 7.6 0 0 0-1.7-1L15 3.5h-4l-.4 2.5a7.6 7.6 0 0 0-1.7 1l-2.3-.9-2 3.4L6.6 11a7.5 7.5 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9c.5.4 1.1.75 1.7 1l.4 2.5h4l.4-2.5c.6-.25 1.2-.6 1.7-1l2.3.9 2-3.4-2-1.5Z"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+function IconLogout() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" strokeLinecap="round" />
+      <path d="M16 17l5-5-5-5M21 12H9" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function IconChevronDown({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      className={className}
+    >
+      <path d="m6 9 6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -1300,27 +1313,16 @@ function IconX() {
 /* ------------------------------------------------------------------
 SETUP NOTES
 
-1. Save this file as app/page.tsx in a Next.js 14+ App Router project
-   created with Tailwind (npx create-next-app@latest --tailwind).
-
-2. Add the two fonts in app/layout.tsx:
-
-   import { Fraunces, Plus_Jakarta_Sans } from "next/font/google";
-
-   const display = Fraunces({ subsets: ["latin"], variable: "--font-display" });
-   const body = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-body" });
-
-   export default function RootLayout({ children }: { children: React.ReactNode }) {
-     return (
-       <html lang="id" className={`${display.variable} ${body.variable}`}>
-         <body>{children}</body>
-       </html>
-     );
-   }
-
-3. Create a sign-in page at app/signin/page.tsx (see example below).
-
-4. Everything on this page — search, filters, favorites, the two
-   carousels, the tabs, and the live search-suggestion dropdown — is
-   state-driven and works out of the box, no extra libraries required.
+1. Save this file as app/beranda/page.tsx (route: /beranda) — or reuse
+   it as app/page.tsx and swap it in based on session state, whichever
+   fits your routing/auth setup.
+2. CURRENT_USER is mock data. Replace it with your real session (e.g.
+   from a server component fetch, NextAuth session, or your own auth
+   provider) and pass it down as a prop instead of a hardcoded const.
+3. MY_TICKETS is mock data too — fetch the user's real orders from
+   your backend and pass them into <MyTicketsSection />.
+4. UserMenu's "Keluar" link currently just routes to /sign-in. Wire it
+   to your real sign-out call (clear session/cookie) before navigating.
+5. Everything else (search, filters, favorites, carousels, testimonial
+   marquee) behaves exactly like app/page.tsx.
 ------------------------------------------------------------------- */

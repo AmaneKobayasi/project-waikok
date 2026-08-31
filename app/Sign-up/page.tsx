@@ -1,19 +1,18 @@
 "use client";
 
 /**
- * ConcertGo — Sign In
+ * ConcertGo — Sign Up
  * Single-file Next.js page.
  *
- * Save as: app/sign-in/page.tsx  (route becomes /sign-in)
+ * Save as: app/sign-up/page.tsx  (route becomes /sign-up)
  *
- * Uses the landing page's warm cream / espresso / terracotta palette and
- * fonts so both pages read as one site.
+ * Mirrors app/sign-in/page.tsx exactly in structure and styling — same
+ * warm cream / espresso / terracotta palette, same glassmorphism card,
+ * same simplified header (logo only, no nav links), same multi-column
+ * footer, and the same 6-digit verification step after submitting,
+ * since a new account typically needs email confirmation.
  *
- * Flow: email + password → (simulated) request → 6-digit verification
- * code step → success. The footer is the same multi-column footer used
- * on the landing page.
- *
- * Requires the same setup as the landing page: Tailwind CSS, the
+ * Requires the same setup as the other pages: Tailwind CSS, the
  * --font-display / --font-body variables in app/layout.tsx, and the
  * logo at public/image/Logo.png.
  */
@@ -93,21 +92,21 @@ function ToastStack({ toasts, dismiss }: { toasts: Toast[]; dismiss: (id: number
 /*  Page                                                                */
 /* ------------------------------------------------------------------ */
 
-export default function SignInPage() {
+export default function SignUpPage() {
   const { toasts, push, dismiss } = useToasts();
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f6efe1] font-[var(--font-body,ui-sans-serif)] text-[#241608]">
       <SiteHeader />
       <ToastStack toasts={toasts} dismiss={dismiss} />
-      <SignInHero onToast={push} />
+      <SignUpHero onToast={push} />
       <SiteFooter />
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  Header — logo only, no nav links, "Daftar" outline button          */
+/*  Header — logo only, no nav links, "Masuk" outline button           */
 /* ------------------------------------------------------------------ */
 
 function SiteHeader() {
@@ -123,10 +122,10 @@ function SiteHeader() {
         </a>
 
         <a
-          href="/Sign-up"
+          href="/Sign-in"
           className="rounded-full border-2 border-[#241608] bg-[#241608] px-5 py-2 text-sm font-medium text-[#f6efe1] transition-colors hover:bg-transparent hover:text-[#241608]"
         >
-          Daftar
+          Masuk
         </a>
       </div>
     </header>
@@ -134,13 +133,12 @@ function SiteHeader() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Hero section wrapping the login card                               */
+/*  Hero section wrapping the sign-up card                             */
 /* ------------------------------------------------------------------ */
 
-function SignInHero({ onToast }: { onToast: (kind: Toast["kind"], msg: string) => void }) {
+function SignUpHero({ onToast }: { onToast: (kind: Toast["kind"], msg: string) => void }) {
   return (
     <main className="relative flex flex-1 items-center justify-center overflow-hidden px-5 py-16">
-      {/* soft warm gradient backdrop, echoing a dim, blurred stage */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -158,24 +156,33 @@ function SignInHero({ onToast }: { onToast: (kind: Toast["kind"], msg: string) =
         className="pointer-events-none absolute -right-24 bottom-10 h-72 w-72 rounded-full bg-[#241209]/25 blur-3xl"
       />
 
-      <LoginCard onToast={onToast} />
+      <SignUpCard onToast={onToast} />
     </main>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  Login card — two steps: credentials, then verification code        */
+/*  Sign-up card — two steps: form, then verification code             */
 /* ------------------------------------------------------------------ */
 
-type Step = "credentials" | "otp";
-type FieldErrors = { email?: string; password?: string };
+type Step = "form" | "otp";
+type FieldErrors = {
+  name?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  terms?: string;
+};
 
-function LoginCard({ onToast }: { onToast: (kind: Toast["kind"], msg: string) => void }) {
-  const [step, setStep] = useState<Step>("credentials");
+function SignUpCard({ onToast }: { onToast: (kind: Toast["kind"], msg: string) => void }) {
+  const [step, setStep] = useState<Step>("form");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(true);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [shakeField, setShakeField] = useState<keyof FieldErrors | null>(null);
   const [loading, setLoading] = useState(false);
@@ -190,6 +197,12 @@ function LoginCard({ onToast }: { onToast: (kind: Toast["kind"], msg: string) =>
     const next: FieldErrors = {};
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+    if (!name.trim()) {
+      next.name = "Nama lengkap wajib diisi.";
+    } else if (name.trim().length < 3) {
+      next.name = "Nama minimal 3 karakter.";
+    }
+
     if (!email.trim()) {
       next.email = "Alamat email wajib diisi.";
     } else if (!emailPattern.test(email.trim())) {
@@ -200,6 +213,16 @@ function LoginCard({ onToast }: { onToast: (kind: Toast["kind"], msg: string) =>
       next.password = "Kata sandi wajib diisi.";
     } else if (password.length < 8) {
       next.password = "Kata sandi minimal 8 karakter.";
+    }
+
+    if (!confirmPassword) {
+      next.confirmPassword = "Konfirmasi kata sandi wajib diisi.";
+    } else if (confirmPassword !== password) {
+      next.confirmPassword = "Konfirmasi kata sandi tidak cocok.";
+    }
+
+    if (!agreed) {
+      next.terms = "Kamu perlu menyetujui Syarat & Ketentuan dulu.";
     }
 
     return next;
@@ -215,8 +238,14 @@ function LoginCard({ onToast }: { onToast: (kind: Toast["kind"], msg: string) =>
     const nextErrors = validate();
     setErrors(nextErrors);
 
-    if (nextErrors.email) triggerShake("email");
-    else if (nextErrors.password) triggerShake("password");
+    const shakeOrder: (keyof FieldErrors)[] = [
+      "name",
+      "email",
+      "password",
+      "confirmPassword",
+    ];
+    const firstShake = shakeOrder.find((f) => nextErrors[f]);
+    if (firstShake) triggerShake(firstShake);
 
     if (Object.keys(nextErrors).length > 0) {
       onToast("error", "Coba periksa lagi ya, ada isian yang belum pas.");
@@ -224,7 +253,7 @@ function LoginCard({ onToast }: { onToast: (kind: Toast["kind"], msg: string) =>
     }
 
     setLoading(true);
-    // Simulated request — wire this up to your real auth endpoint.
+    // Simulated request — wire this up to your real sign-up endpoint.
     await new Promise((resolve) => setTimeout(resolve, 1200));
     setLoading(false);
 
@@ -242,23 +271,39 @@ function LoginCard({ onToast }: { onToast: (kind: Toast["kind"], msg: string) =>
         mounted ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
       }`}
     >
-      {step === "credentials" ? (
+      {step === "form" ? (
         <>
           {/* Header */}
           <div className="mb-8 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#f1e6d0]">
-              <IconTicketPerson />
+              <IconTicketPlus />
             </div>
             <h1 className="font-[var(--font-display,serif)] text-[26px] font-semibold leading-tight text-[#241608] sm:text-[28px]">
-              Selamat Datang Kembali, Pencinta Musik! 🎶
+              Gabung Yuk, Pencinta Musik! 🎤
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-[#5a4a35]">
-              Masuk ke akun ConcertGo-mu dan lanjutkan petualangan musikmu.
+              Buat akun ConcertGo dan jangan sampai ketinggalan konser favoritmu.
             </p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
+            <FormField
+              label="Nama Lengkap"
+              error={errors.name}
+              shake={shakeField === "name"}
+              icon={<IconUser />}
+            >
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="tulis nama lengkapmu"
+                autoComplete="name"
+                className="w-full bg-transparent py-3 pl-10 pr-3 text-sm text-[#241608] placeholder:text-[#a1917a] focus:outline-none"
+              />
+            </FormField>
+
             <FormField
               label="Alamat Email"
               error={errors.email}
@@ -296,24 +341,60 @@ function LoginCard({ onToast }: { onToast: (kind: Toast["kind"], msg: string) =>
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 className="w-full bg-transparent py-3 pl-10 pr-3 text-sm text-[#241608] placeholder:text-[#a1917a] focus:outline-none"
               />
             </FormField>
 
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 text-[#5a4a35]">
+            <FormField
+              label="Konfirmasi Kata Sandi"
+              error={errors.confirmPassword}
+              shake={shakeField === "confirmPassword"}
+              icon={<IconLock />}
+              trailing={
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm((s) => !s)}
+                  aria-label={showConfirm ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                  className="pr-3 text-[#8a7a63] transition-colors hover:text-[#241608]"
+                >
+                  {showConfirm ? <IconEyeOff /> : <IconEye />}
+                </button>
+              }
+            >
+              <input
+                type={showConfirm ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="ulangi kata sandimu"
+                autoComplete="new-password"
+                className="w-full bg-transparent py-3 pl-10 pr-3 text-sm text-[#241608] placeholder:text-[#a1917a] focus:outline-none"
+              />
+            </FormField>
+
+            <div>
+              <label className="flex items-start gap-2 text-sm text-[#5a4a35]">
                 <input
                   type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  className="h-4 w-4 rounded border-[#c9b48b] accent-[#d9691f]"
+                  checked={agreed}
+                  onChange={(e) => setAgreed(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-[#c9b48b] accent-[#d9691f]"
                 />
-                Ingat saya
+                <span>
+                  Saya setuju dengan{" "}
+                  <a href="#" className="font-medium text-[#b5772f] hover:text-[#d9691f]">
+                    Syarat & Ketentuan
+                  </a>{" "}
+                  dan{" "}
+                  <a href="#" className="font-medium text-[#b5772f] hover:text-[#d9691f]">
+                    Kebijakan Privasi
+                  </a>{" "}
+                  ConcertGo.
+                </span>
               </label>
-              <a href="/reset-password" className="font-medium text-[#b5772f] hover:text-[#d9691f]">
-                Lupa kata sandi? Reset di sini
-              </a>
+              {errors.terms && (
+                <p className="mt-1.5 text-xs font-medium text-[#d9532f]">{errors.terms}</p>
+              )}
             </div>
 
             <button
@@ -322,12 +403,12 @@ function LoginCard({ onToast }: { onToast: (kind: Toast["kind"], msg: string) =>
               className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#241209] to-[#d9691f] py-3.5 text-sm font-semibold text-[#f6efe1] shadow-[0_10px_30px_rgba(217,105,31,0.35)] transition-all hover:scale-[1.02] hover:shadow-[0_14px_38px_rgba(217,105,31,0.45)] active:scale-[0.99] disabled:opacity-70"
             >
               {loading && <IconSpinner />}
-              {loading ? "Memproses..." : "Masuk ke Akun"}
+              {loading ? "Memproses..." : "Buat Akun"}
             </button>
 
             <div className="flex items-center gap-3 py-1 text-xs uppercase tracking-wide text-[#a1917a]">
               <span className="h-px flex-1 bg-[#e6d9bf]" />
-              atau masuk dengan
+              atau daftar dengan
               <span className="h-px flex-1 bg-[#e6d9bf]" />
             </div>
 
@@ -337,29 +418,29 @@ function LoginCard({ onToast }: { onToast: (kind: Toast["kind"], msg: string) =>
                 onClick={() => handleSocial("Google")}
                 className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-[#e6d9bf] py-3 text-sm font-medium text-[#241608] transition-colors hover:border-[#4285F4] hover:bg-[#4285F4]/5"
               >
-                <IconGoogle /> Masuk dengan Google
+                <IconGoogle /> Daftar dengan Google
               </button>
               <button
                 type="button"
                 onClick={() => handleSocial("Facebook")}
                 className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-[#e6d9bf] py-3 text-sm font-medium text-[#241608] transition-colors hover:border-[#1877F2] hover:bg-[#1877F2]/5"
               >
-                <IconFacebook /> Masuk dengan Facebook
+                <IconFacebook /> Daftar dengan Facebook
               </button>
             </div>
           </form>
 
           <p className="mt-7 text-center text-sm text-[#5a4a35]">
-            Belum punya akun?{" "}
-            <a href="/sign-up" className="font-semibold text-[#c94f6d] hover:text-[#a63d57]">
-              Yuk, daftar sekarang!
+            Sudah punya akun?{" "}
+            <a href="/sign-in" className="font-semibold text-[#c94f6d] hover:text-[#a63d57]">
+              Masuk di sini
             </a>
           </p>
         </>
       ) : (
         <VerificationStep
           email={email}
-          onBack={() => setStep("credentials")}
+          onBack={() => setStep("form")}
           onToast={onToast}
         />
       )}
@@ -393,7 +474,7 @@ function LoginCard({ onToast }: { onToast: (kind: Toast["kind"], msg: string) =>
 }
 
 /* ------------------------------------------------------------------ */
-/*  Step 2: 6-digit verification code                                  */
+/*  Step 2: 6-digit verification code (same behaviour as sign-in)      */
 /* ------------------------------------------------------------------ */
 
 const OTP_LENGTH = 4;
@@ -465,7 +546,7 @@ function VerificationStep({
     await new Promise((resolve) => setTimeout(resolve, 1200));
     setVerifying(false);
 
-    onToast("success", "Verifikasi berhasil! Selamat datang kembali di ConcertGo.");
+    onToast("success", "Akun berhasil diverifikasi! Selamat bergabung di ConcertGo.");
   }
 
   function handleResend() {
@@ -483,12 +564,12 @@ function VerificationStep({
           <IconShieldCheck />
         </div>
         <h1 className="font-[var(--font-display,serif)] text-[26px] font-semibold leading-tight text-[#241608] sm:text-[28px]">
-          Verifikasi Kode
+          Verifikasi Akun
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-[#5a4a35]">
           Kami sudah kirim kode 6 digit ke{" "}
           <span className="font-medium text-[#241608]">{email || "emailmu"}</span>. Masukkan di
-          bawah untuk lanjut masuk.
+          bawah untuk mengaktifkan akunmu.
         </p>
       </div>
 
@@ -520,7 +601,7 @@ function VerificationStep({
           className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#241209] to-[#d9691f] py-3.5 text-sm font-semibold text-[#f6efe1] shadow-[0_10px_30px_rgba(217,105,31,0.35)] transition-all hover:scale-[1.02] hover:shadow-[0_14px_38px_rgba(217,105,31,0.45)] active:scale-[0.99] disabled:opacity-70"
         >
           {verifying && <IconSpinner />}
-          {verifying ? "Memverifikasi..." : "Verifikasi & Masuk"}
+          {verifying ? "Memverifikasi..." : "Verifikasi & Aktifkan Akun"}
         </button>
 
         <p className="mt-5 text-center text-sm text-[#5a4a35]">
@@ -542,7 +623,7 @@ function VerificationStep({
           onClick={onBack}
           className="mt-2 w-full text-center text-sm text-[#8a7a63] hover:text-[#241608]"
         >
-          ← Kembali ke halaman masuk
+          ← Kembali ke formulir pendaftaran
         </button>
       </form>
     </>
@@ -588,7 +669,7 @@ function FormField({
 }
 
 /* ------------------------------------------------------------------ */
-/*  Footer — same multi-column footer as the landing page              */
+/*  Footer — same multi-column footer as the landing/sign-in pages     */
 /* ------------------------------------------------------------------ */
 
 const FOOTER_COLUMNS: { heading: string; links: { label: string; href: string }[] }[] = [
@@ -688,6 +769,14 @@ function SiteFooter() {
 /*  Icons                                                               */
 /* ------------------------------------------------------------------ */
 
+function IconUser() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6" strokeLinecap="round" />
+    </svg>
+  );
+}
 function IconEnvelope() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -733,12 +822,12 @@ function IconSpinner() {
     </svg>
   );
 }
-function IconTicketPerson() {
+function IconTicketPlus() {
   return (
     <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#d9691f" strokeWidth="1.6">
-      <circle cx="12" cy="7" r="3" />
-      <path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" strokeLinecap="round" />
-      <rect x="15.5" y="2.5" width="6" height="4" rx="1" transform="rotate(18 15.5 2.5)" />
+      <rect x="3" y="7" width="18" height="12" rx="2.5" />
+      <path d="M3 12h18" strokeDasharray="1.5 2.2" />
+      <path d="M12 15.5v-3M10.5 14h3" strokeLinecap="round" />
     </svg>
   );
 }
@@ -807,16 +896,16 @@ function IconX() {
 /* ------------------------------------------------------------------
 SETUP NOTES
 
-1. Save this file as app/sign-in/page.tsx (route: /sign-in).
-2. Uses the same Tailwind + font setup as the landing page — no new
+1. Save this file as app/sign-up/page.tsx (route: /sign-up).
+2. Uses the same Tailwind + font setup as the other pages — no new
    dependencies. Logo path: public/image/Logo.png.
-3. Flow: submitting email + password simulates a request, then shows
-   a 6-digit verification code step (auto-focus, paste support,
-   backspace-to-previous-field, and a 30s resend cooldown). Replace
-   both `await new Promise(...)` blocks (in handleSubmit and
-   handleVerify) with your real endpoints — request an OTP after
-   credentials check out, then confirm it in handleVerify.
-4. Link targets /sign-up and /reset-password, and all footer column
-   links, are placeholders — point them at your actual routes once
-   those pages exist.
+3. Flow: submitting the form simulates a request, then shows the same
+   6-digit verification step as sign-in (auto-focus, paste support,
+   backspace-to-previous-field, 30s resend cooldown). Replace both
+   `await new Promise(...)` blocks (in handleSubmit and handleVerify)
+   with your real endpoints — create the account and send an OTP on
+   submit, then confirm it in handleVerify.
+4. The "Syarat & Ketentuan" / "Kebijakan Privasi" links and all footer
+   column links are placeholders — point them at your actual routes
+   once those pages exist.
 ------------------------------------------------------------------- */
