@@ -11,55 +11,13 @@ import type { CSSProperties, JSX } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { EVENTS, type Category, type TicketTier, type EventItem } from "@/lib/eventsData";
 
 /* ------------------------------------------------------------------ */
-/*  Type Definitions & Dummy Data                                     */
+/*  Tipe Data & Dummy Data Konser (Sinkron dengan Homepage)           */
 /* ------------------------------------------------------------------ */
-
-type Category =
-  | "Musik & Konser"
-  | "Festival Musik"
-  | "Hiburan & Pertunjukan"
-  | "Wisata & Outdoor"
-  | "Olahraga & E-Sport"
-  | "Amal & Charity"
-  | "Seni & Budaya"
-  | "Stand-up Comedy"
-  | "Atraksi & Wahana";
-
-type TicketTier = {
-  name: string;
-  price: number;
-  perks: string[];
-  status: "Tersedia" | "Sisa Sedikit" | "Habis";
-};
-
-type EventItem = {
-  id: string;
-  title: string;
-  artist: string;
-  venue: string;
-  address: string;
-  city: string;
-  date: string;
-  dayMonth: { day: string; month: string };
-  time: string;
-  genre: string;
-  priceFrom: number;
-  blurb: string;
-  tone: "espresso" | "clay" | "olive";
-  badge?: string;
-  image: string;
-  interestedCount: string;
-  soldPercentage: number;
-  promoter: string;
-  lineup: string[];
-  ticketTiers: TicketTier[];
-  rundown: { time: string; act: string }[];
-};
 
 const CATEGORIES: { label: Category; icon: JSX.Element }[] = [
-  { label: "Musik & Konser", icon: <IconMusic /> },
   { label: "Festival Musik", icon: <IconSparkles /> },
   { label: "Hiburan & Pertunjukan", icon: <IconMask /> },
   { label: "Wisata & Outdoor", icon: <IconCompass /> },
@@ -68,6 +26,7 @@ const CATEGORIES: { label: Category; icon: JSX.Element }[] = [
   { label: "Seni & Budaya", icon: <IconPalette /> },
   { label: "Stand-up Comedy", icon: <IconMic /> },
   { label: "Atraksi & Wahana", icon: <IconPin /> },
+  { label: "Musik & Konser", icon: <IconMusic /> },
 ];
 
 const HERO_SLIDES = [
@@ -115,390 +74,91 @@ const HERO_SLIDES = [
   },
 ];
 
-const EVENTS: EventItem[] = [
-  {
-    id: "senja-orchestra",
-    title: "Senja Symphony Orchestra",
-    artist: "Kala Senja & String Ensemble",
-    venue: "Istora Senayan",
-    address: "Jl. Pintu Satu Senayan, Gelora, Tanah Abang, Jakarta Pusat",
-    city: "Jakarta",
-    date: "12 Sep 2026",
-    dayMonth: { day: "12", month: "SEP" },
-    time: "19:00 WIB",
-    genre: "Orkestra",
-    priceFrom: 250000,
-    blurb:
-      "Perpaduan vokal memikat dan harmoni kayu akustik yang hangat. Siap-siap larut dalam suasana malam syahdu nan megah.",
-    tone: "espresso",
-    badge: "Terlaris",
-    image: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?q=80&w=800&auto=format&fit=crop",
-    interestedCount: "2.4k peminat",
-    soldPercentage: 88,
-    promoter: "Kala Harmony Live",
-    lineup: ["Kala Senja", "Jakarta City Strings", "Aditya Nugraha (Violin)", "Vocal Quartet"],
-    ticketTiers: [
-      { name: "VVIP (Front Row + Merch)", price: 750000, perks: ["Kursi nomor baris 1-3", "Goodie bag eksklusif", "Fast-track gate"], status: "Sisa Sedikit" },
-      { name: "VIP (Numbered Seating)", price: 450000, perks: ["Kursi nomor tengah", "Pandangan panggung lurus"], status: "Tersedia" },
-      { name: "Reguler Tribune", price: 250000, perks: ["Free seating tribun", "Akses semua booth"], status: "Tersedia" },
-    ],
-    rundown: [
-      { time: "17:00 WIB", act: "Open Gate & Penukaran Wristband" },
-      { time: "18:30 WIB", act: "Orchestral Prelude by City Strings" },
-      { time: "19:30 WIB", act: "Main Performance: Kala Senja & Ensemble" },
-      { time: "21:30 WIB", act: "Encore & Sesi Dokumentasi" },
-    ],
-  },
-  {
-    id: "ombak-festival",
-    title: "Ombak Nusantara Festival",
-    artist: "24 Musisi Indie Pesisir",
-    venue: "Pantai Karang Beach Club",
-    address: "Jl. Pantai Karang No. 88, Sanur, Denpasar Selatan, Bali",
-    city: "Bali",
-    date: "20 Sep 2026",
-    dayMonth: { day: "20", month: "SEP" },
-    time: "16:00 WITA",
-    genre: "Indie & Alternative",
-    priceFrom: 180000,
-    blurb:
-      "Festival musik tepi pantai dengan lima panggung dan sunset terbaik se-Bali. Bawa sandal santai, tinggalkan segala beban penat.",
-    tone: "clay",
-    badge: "Promo",
-    image: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=800&auto=format&fit=crop",
-    interestedCount: "3.8k peminat",
-    soldPercentage: 75,
-    promoter: "Pesisir Soundwave",
-    lineup: ["Fourtwnty", "The Panturas", "Dialog Dini Hari", "Danilla", "Barasuara"],
-    ticketTiers: [
-      { name: "3-Day Pass VIP", price: 550000, perks: ["Akses 3 hari penuh", "VIP Sunset Deck", "Minuman selamat datang"], status: "Tersedia" },
-      { name: "Single Day Pass", price: 180000, perks: ["Akses 1 hari bebas pilih", "Festival ground"], status: "Tersedia" },
-      { name: "Early Bird 3-Day", price: 150000, perks: ["Akses 3 hari", "Harga promo perdana"], status: "Habis" },
-    ],
-    rundown: [
-      { time: "15:00 WITA", act: "Gate Open & Beach Market Activation" },
-      { time: "16:30 WITA", act: "Sunset Stage: Akustik & Ambient" },
-      { time: "19:00 WITA", act: "Main Beach Stage Performances" },
-      { time: "23:00 WITA", act: "After-party DJ Sessions" },
-    ],
-  },
-  {
-    id: "kota-tua-jazz",
-    title: "Kota Tua Jazz & Soul Night",
-    artist: "Ardan Quartet feat. Nadia Ayu",
-    venue: "Taman Fatahillah",
-    address: "Kawasan Kota Tua, Pinangsia, Tamansari, Jakarta Barat",
-    city: "Jakarta",
-    date: "27 Sep 2026",
-    dayMonth: { day: "27", month: "SEP" },
-    time: "18:30 WIB",
-    genre: "Jazz",
-    priceFrom: 150000,
-    blurb:
-      "Alunan jazz klasik di tengah arsitektur gedung tua bersejarah. Duduk santai, nikmati kopi hangat, dan biarkan nada trompet bicara.",
-    tone: "olive",
-    badge: "Intimate",
-    image: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=800&auto=format&fit=crop",
-    interestedCount: "1.2k peminat",
-    soldPercentage: 92,
-    promoter: "Heritage Jazz Movement",
-    lineup: ["Ardan Quartet", "Nadia Ayu", "Monita Tahalea", "Barry Likumahuwa Bass Project"],
-    ticketTiers: [
-      { name: "Jazz Table VIP (Termasuk Kopi & Snack)", price: 320000, perks: ["Meja nomor reservasi", "Artisan coffee", "CD Eksklusif"], status: "Sisa Sedikit" },
-      { name: "General Admission", price: 150000, perks: ["Akses area panggung utama"], status: "Tersedia" },
-    ],
-    rundown: [
-      { time: "17:30 WIB", act: "Open Gate & Heritage Walk" },
-      { time: "18:30 WIB", act: "Opening Act by Youth Brass Band" },
-      { time: "20:00 WIB", act: "Ardan Quartet feat. Nadia Ayu" },
-      { time: "22:00 WIB", act: "Jam Session Kolaboratif" },
-    ],
-  },
-  {
-    id: "gema-rimba",
-    title: "Gema Rimba Folk Festival",
-    artist: "Hutan Bernyanyi Collective",
-    venue: "Taman Hutan Raya Juanda",
-    address: "Jl. Ir. H. Juanda No.99, Ciburial, Cimenyan, Bandung",
-    city: "Bandung",
-    date: "3 Okt 2026",
-    dayMonth: { day: "03", month: "OKT" },
-    time: "17:00 WIB",
-    genre: "Folk & Akustik",
-    priceFrom: 120000,
-    blurb:
-      "Panggung akustik magis di antara pepohonan pinus berkabut. Cocok buat kamu yang merindukan udara sejuk dan petikan gitar lembut.",
-    tone: "espresso",
-    badge: "Outdoor",
-    image: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=800&auto=format&fit=crop",
-    interestedCount: "1.9k peminat",
-    soldPercentage: 80,
-    promoter: "Rimba Echo Creative",
-    lineup: ["Banda Neira Legacy", "Nadin Amizah", "Fiersa Besari", "Iksan Skuter"],
-    ticketTiers: [
-      { name: "Picnic VIP (Termasuk Tiket + Alas Duduk)", price: 280000, perks: ["Matras piknik kayu", "Paket teh rempah", "Area depan panggung"], status: "Tersedia" },
-      { name: "Reguler Pine Area", price: 120000, perks: ["Akses area hutan", "Bebas pilih spot"], status: "Tersedia" },
-    ],
-    rundown: [
-      { time: "15:00 WIB", act: "Open Gate & Nature Workshop" },
-      { time: "17:00 WIB", act: "Acoustic Sunset Sessions" },
-      { time: "19:00 WIB", act: "Hutan Bernyanyi Showcase" },
-    ],
-  },
-  {
-    id: "neon-dangdut",
-    title: "Neon Dangdut Koplo Party",
-    artist: "Rafi & The Koplo Machine",
-    venue: "GOR C-Tra Arena",
-    address: "Jl. Cikutra No. 278, Cibeunying Kidul, Bandung",
-    city: "Bandung",
-    date: "10 Okt 2026",
-    dayMonth: { day: "10", month: "OKT" },
-    time: "20:00 WIB",
-    genre: "Dangdut & Koplo",
-    priceFrom: 100000,
-    blurb:
-      "Goyang sampai subuh dengan remix koplo modern dan tata laser canggih. Sound system menggelegar tanpa kompromi.",
-    tone: "clay",
-    badge: "Hot",
-    image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=800&auto=format&fit=crop",
-    interestedCount: "4.5k peminat",
-    soldPercentage: 95,
-    promoter: "Koplo Rave Indonesia",
-    lineup: ["Rafi & The Koplo Machine", "Feel Koplo", "NDX AKA", "Guyon Waton"],
-    ticketTiers: [
-      { name: "VIP Mosh Front", price: 220000, perks: ["Barikade panggung depan", "Luminous glow stick", "Stiker pack"], status: "Sisa Sedikit" },
-      { name: "Festival Goyang", price: 100000, perks: ["General admission standing area"], status: "Tersedia" },
-    ],
-    rundown: [
-      { time: "18:00 WIB", act: "Open Gate & DJ Pemanasan" },
-      { time: "20:00 WIB", act: "Live Koplo Nonstop Part 1" },
-      { time: "22:00 WIB", act: "Grand Jam Goyang Bersama" },
-    ],
-  },
-  {
-    id: "bianglala-pop",
-    title: "Bianglala Mega Pop Fest",
-    artist: "5 Headliner Pop Nasional",
-    venue: "Stadion Madya Senayan",
-    address: "Gelora Bung Karno Sports Complex, Senayan, Jakarta Pusat",
-    city: "Jakarta",
-    date: "18 Okt 2026",
-    dayMonth: { day: "18", month: "OKT" },
-    time: "15:00 WIB",
-    genre: "Pop",
-    priceFrom: 320000,
-    blurb:
-      "Festival akbar parade hits pop Indonesia. Bernyanyi serentak dari lagu pembuka hingga kembang api penutup spektakuler.",
-    tone: "olive",
-    badge: "Favorit",
-    image: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=800&auto=format&fit=crop",
-    interestedCount: "5.1k peminat",
-    soldPercentage: 84,
-    promoter: "Nusantara Pop Live",
-    lineup: ["Tulus", "Raisa", "Yura Yunita", "Kunto Aji", "Hindia"],
-    ticketTiers: [
-      { name: "Diamond VIP Numbered", price: 850000, perks: ["Tempat duduk terbaik", "Exclusive lanyard", "Lounge VIP"], status: "Tersedia" },
-      { name: "Festival Gold", price: 480000, perks: ["Standing area dekat panggung"], status: "Tersedia" },
-      { name: "Tribune CAT 1", price: 320000, perks: ["Tribun bertingkat atap"], status: "Tersedia" },
-    ],
-    rundown: [
-      { time: "13:00 WIB", act: "Open Gate Festival Area" },
-      { time: "15:30 WIB", act: "Artist 1 & 2 Live Show" },
-      { time: "18:30 WIB", act: "Break & Acoustic Showcase" },
-      { time: "19:30 WIB", act: "Main Headliners Concert" },
-      { time: "22:45 WIB", act: "Fireworks Finale" },
-    ],
-  },
-  {
-    id: "malam-metal",
-    title: "Malam Metal Raya 2026",
-    artist: "Serigala Baja & Bintang Tamu",
-    venue: "Eldorado Dome",
-    address: "Jl. Dr. Setiabudi No. 438, Isola, Sukasari, Bandung",
-    city: "Bandung",
-    date: "24 Okt 2026",
-    dayMonth: { day: "24", month: "OKT" },
-    time: "19:30 WIB",
-    genre: "Rock & Metal",
-    priceFrom: 140000,
-    blurb:
-      "Mosh pit paling bertenaga tahun ini. Tiga band cadas legendaris satu panggung dengan dentuman drum menggetarkan dada.",
-    tone: "espresso",
-    badge: "Headbang",
-    image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=800&auto=format&fit=crop",
-    interestedCount: "2.1k peminat",
-    soldPercentage: 70,
-    promoter: "Distorsi Hitam Prod.",
-    lineup: ["Serigala Baja", "Burgerkill Legacy", "Deadsquad", "Seringai"],
-    ticketTiers: [
-      { name: "Moshpit Circle Pass", price: 250000, perks: ["Akses pit depan", "Kaos resmi festival", "Poster bertandatangan"], status: "Tersedia" },
-      { name: "General Admission", price: 140000, perks: ["Akses arena konser"], status: "Tersedia" },
-    ],
-    rundown: [
-      { time: "18:00 WIB", act: "Open Gate & Merchandise Booth" },
-      { time: "19:30 WIB", act: "Opening Act Metalcore" },
-      { time: "20:30 WIB", act: "Main Set: Serigala Baja" },
-    ],
-  },
-  {
-    id: "akustik-senyap",
-    title: "Akustik di Senyap — Intimate",
-    artist: "Larasati & Sahabat",
-    venue: "Rooftop Kopi Manja",
-    address: "Jl. Kaliurang KM 5.5, Manggung, Caturtunggal, Sleman, Yogyakarta",
-    city: "Yogyakarta",
-    date: "1 Nov 2026",
-    dayMonth: { day: "01", month: "NOV" },
-    time: "19:00 WIB",
-    genre: "Folk & Akustik",
-    priceFrom: 95000,
-    blurb:
-      "Konser intim hanya 200 penonton di rooftop beratapkan bintang. Petikan dawai gitar lembut menemani secangkir kopi hangat.",
-    tone: "clay",
-    badge: "Sisa Sedikit",
-    image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=800&auto=format&fit=crop",
-    interestedCount: "980 peminat",
-    soldPercentage: 94,
-    promoter: "Kopi & Nada Senyap",
-    lineup: ["Larasati", "Duo Suara Hujan", "Ari & Gitar"],
-    ticketTiers: [
-      { name: "Single Seat + Coffee & Pastry", price: 95000, perks: ["1 Kursi teratur", "Pilihan minuman kopi", "Kue camilan"], status: "Sisa Sedikit" },
-    ],
-    rundown: [
-      { time: "18:30 WIB", act: "Open Gate & Welcome Drink" },
-      { time: "19:30 WIB", act: "Sesi Cerita & Lagu Larasati" },
-      { time: "21:30 WIB", act: "Obrolan Santai Bareng Artis" },
-    ],
-  },
-  {
-    id: "ritme-nusantara",
-    title: "Ritme Nusantara Fusion",
-    artist: "Gamelan Contemporary Orchestra",
-    venue: "Taman Budaya Surakarta",
-    address: "Jl. Ir. Sutami No.57, Jebres, Kec. Jebres, Kota Surakarta, Jawa Tengah",
-    city: "Solo",
-    date: "8 Nov 2026",
-    dayMonth: { day: "08", month: "NOV" },
-    time: "18:00 WIB",
-    genre: "Tradisional & Fusion",
-    priceFrom: 110000,
-    blurb:
-      "Gamelan pusaka berpadu synth elektrik dan drum dinamis. Eksperimen bunyi adiluhung yang menghormati akar tradisi leluhur.",
-    tone: "olive",
-    badge: "Budaya",
-    image: "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?q=80&w=800&auto=format&fit=crop",
-    interestedCount: "1.4k peminat",
-    soldPercentage: 68,
-    promoter: "Dinas Seni Budaya Surakarta",
-    lineup: ["Gamelan Contemporary Orchestra", "Kua Etnika", "SambaSunda"],
-    ticketTiers: [
-      { name: "VIP Pendopo Depan", price: 220000, perks: ["Tempat duduk utama", "Souvenir wayang mini"], status: "Tersedia" },
-      { name: "Reguler Lesehan", price: 110000, perks: ["Area lesehan karpet beludru"], status: "Tersedia" },
-    ],
-    rundown: [
-      { time: "17:00 WIB", act: "Pameran Instrumen Tradisional" },
-      { time: "18:30 WIB", act: "Tembang Pembuka & Tari Sambutan" },
-      { time: "19:30 WIB", act: "Gamelan Fusion Grand Symphony" },
-    ],
-  },
-  {
-    id: "surabaya-indie-wave",
-    title: "Surabaya Indie Wave Fest",
-    artist: "Kuartet Malam & Musisi Lokal",
-    venue: "Grand City Convention",
-    address: "Jl. Walikota Mustajab No.1, Ketabang, Genteng, Surabaya",
-    city: "Surabaya",
-    date: "15 Nov 2026",
-    dayMonth: { day: "15", month: "NOV" },
-    time: "17:30 WIB",
-    genre: "Indie & Alternative",
-    priceFrom: 135000,
-    blurb:
-      "Gairah musik alternatif kota pahlawan. Dentuman drum cepat, lirik puitis, dan paduan suara penonton tanpa batas.",
-    tone: "espresso",
-    badge: "Pilihan",
-    image: "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=800&auto=format&fit=crop",
-    interestedCount: "2.8k peminat",
-    soldPercentage: 77,
-    promoter: "East Wave Organizer",
-    lineup: ["Kuartet Malam", "Silampukau", "Heavy Monster", "Grrrl Gang"],
-    ticketTiers: [
-      { name: "VIP Backstage Access", price: 350000, perks: ["Meet & Greet", "Akses pit depan", "Poster bertandatangan"], status: "Tersedia" },
-      { name: "Festival Pass", price: 135000, perks: ["General admission"], status: "Tersedia" },
-    ],
-    rundown: [
-      { time: "16:30 WIB", act: "Open Gate" },
-      { time: "17:30 WIB", act: "Opening Session" },
-      { time: "19:30 WIB", act: "Main Indie Acts" },
-    ],
-  },
-  {
-    id: "jogja-retro-groove",
-    title: "Jogja Retro Soul & Groove",
-    artist: "The Vintage Soul Project",
-    venue: "Jogja Expo Center (JEC)",
-    address: "Jl. Raya Janti, Wonocatur, Banguntapan, Bantul, Yogyakarta",
-    city: "Yogyakarta",
-    date: "22 Nov 2026",
-    dayMonth: { day: "22", month: "NOV" },
-    time: "18:30 WIB",
-    genre: "Jazz",
-    priceFrom: 125000,
-    blurb:
-      "Dansa bernostalgia bersama irama funk, disco soul, dan city-pop era 80-an yang dibawakan live dengan instrumen tiup lengkap.",
-    tone: "clay",
-    badge: "Spesial",
-    image: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?q=80&w=800&auto=format&fit=crop",
-    interestedCount: "1.6k peminat",
-    soldPercentage: 72,
-    promoter: "Jogja Groove Union",
-    lineup: ["The Vintage Soul Project", "Diskoria", "Mocca", "White Shoes & The Couples Company"],
-    ticketTiers: [
-      { name: "VIP Groove Floor", price: 290000, perks: ["Akses lantai dansa terdepan", "Cocktail/Mocktail gratis"], status: "Tersedia" },
-      { name: "Reguler Pass", price: 125000, perks: ["Akses konser umum"], status: "Tersedia" },
-    ],
-    rundown: [
-      { time: "17:00 WIB", act: "Open Gate & Retro Costume Contest" },
-      { time: "18:30 WIB", act: "Funk DJ Opening" },
-      { time: "20:00 WIB", act: "The Vintage Soul Live Set" },
-    ],
-  },
-  {
-    id: "medan-sound-explosion",
-    title: "Medan Sound Explosion",
-    artist: "Rockstar Sumatera Union",
-    venue: "Lapangan Benteng Medan",
-    address: "Jl. Pengadilan, Petisah Tengah, Medan Petisah, Kota Medan",
-    city: "Medan",
-    date: "29 Nov 2026",
-    dayMonth: { day: "29", month: "NOV" },
-    time: "19:00 WIB",
-    genre: "Rock & Metal",
-    priceFrom: 115000,
-    blurb:
-      "Gemerlap panggung megah berlatar langit malam kota Medan. Nikmati sajian live performance penuh energi membakar akhir pekan.",
-    tone: "olive",
-    badge: "Energetik",
-    image: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?q=80&w=800&auto=format&fit=crop",
-    interestedCount: "3.1k peminat",
-    soldPercentage: 86,
-    promoter: "Horas Stage Media",
-    lineup: ["Rockstar Sumatera Union", "Jamrud", "Kotak", "Padi Reborn"],
-    ticketTiers: [
-      { name: "VIP Rocker Front", price: 260000, perks: ["Area barikade depan", "Bandana eksklusif"], status: "Sisa Sedikit" },
-      { name: "Festival Lapangan", price: 115000, perks: ["Area festival luas"], status: "Tersedia" },
-    ],
-    rundown: [
-      { time: "16:00 WIB", act: "Open Gate & Food Bazaar" },
-      { time: "19:00 WIB", act: "Rock Anthem Opening" },
-      { time: "20:30 WIB", act: "Main Performances Nonstop" },
-    ],
-  },
-];
-
 const GENRES = Array.from(new Set(EVENTS.map((e) => e.genre)));
 const CITIES = Array.from(new Set(EVENTS.map((e) => e.city)));
+
+type CategoryMeta = {
+  tag: string;
+  title: string;
+  subtitle: string;
+  placeholder: string;
+  unit: string;
+};
+
+const CATEGORY_META: Record<Category, CategoryMeta> = {
+  "Festival Musik": {
+    tag: "Festival Musik Spektakuler & Multi-Stage",
+    title: "Cari Festival Musik Favoritmu.",
+    subtitle:
+      "Rasakan gemuruh panggung akbar, line-up musisi legendaris, sunset stage, dan nuansa festival tak terlupakan dengan tiket resmi.",
+    placeholder: "Cari nama festival, line-up artis, panggung, atau kota (contoh: Synchronize, Bali, Senayan)...",
+    unit: "festival musik",
+  },
+  "Hiburan & Pertunjukan": {
+    tag: "Hiburan Panggung & Pertunjukan Megah",
+    title: "Cari Hiburan & Pertunjukan Favoritmu.",
+    subtitle:
+      "Saksikan musikal berkelas, sirkus akrobatik cahaya internasional, dan pertunjukan ilusi spektakuler langsung dari kursi terbaik.",
+    placeholder: "Cari judul musikal, atraksi sirkus, teater, gedung (contoh: Laskar Pelangi, ICE BSD, Teater Jakarta)...",
+    unit: "pertunjukan",
+  },
+  "Wisata & Outdoor": {
+    tag: "Petualangan Alam & Eksplorasi Outdoor",
+    title: "Cari Wisata & Outdoor Favoritmu.",
+    subtitle:
+      "Temukan tiket open trip eksklusif, sunrise camp di pegunungan berkabut, festival alam bebas, dan eksplorasi alam nusantara.",
+    placeholder: "Cari destinasi wisata, camping ground, gunung, atau kota (contoh: Bromo, Dieng, Rinjani)...",
+    unit: "kegiatan wisata",
+  },
+  "Olahraga & E-Sport": {
+    tag: "Laga Sengit Olahraga & Grand Final E-Sport",
+    title: "Cari Olahraga & E-Sport Favoritmu.",
+    subtitle:
+      "Beli tiket resmi pertandingan sepak bola liga teratas, badminton super series, dan grand final turnamen e-sport bergengsi.",
+    placeholder: "Cari tim favorit, game e-sport, turnamen, stadion (contoh: MPL, Persija, GBK, Senayan)...",
+    unit: "tiket pertandingan",
+  },
+  "Amal & Charity": {
+    tag: "Konser & Pagelaran Amal Kebaikan",
+    title: "Cari Acara Amal & Charity.",
+    subtitle:
+      "Menikmati pertunjukan seni sambil berdonasi untuk kemanusiaan, anak pesisir, dan kelestarian alam nusantara dengan laporan transparan.",
+    placeholder: "Cari konser amal, nama gerakan, yayasan, atau kota (contoh: Harmoni Peduli, Mangrove, Jakarta)...",
+    unit: "acara amal",
+  },
+  "Seni & Budaya": {
+    tag: "Mahakarya Seni & Tradisi Luhur Nusantara",
+    title: "Cari Seni & Budaya Favoritmu.",
+    subtitle:
+      "Apresiasi pameran instalasi seni kontemporer, wayang orang megah berbalut aransemen modern, dan tarian kolosal bersejarah.",
+    placeholder: "Cari pameran seni rupa, wayang, sendratari, galeri (contoh: Galeri Nasional, TIM, Solo, Jogja)...",
+    unit: "pagelaran seni",
+  },
+  "Stand-up Comedy": {
+    tag: "Tur Spesial & Panggung Stand-up Comedy",
+    title: "Cari Stand-up Comedy Favoritmu.",
+    subtitle:
+      "Tawa lepas bersama tur solo spesial dan pertunjukan materi baru para komika terlucu tanah air dalam teater eksklusif.",
+    placeholder: "Cari nama komika, judul tur spesial, gedung teater (contoh: Raditya Dika, Usmar Ismail, TIM)...",
+    unit: "show komedi",
+  },
+  "Atraksi & Wahana": {
+    tag: "Tiket Masuk Wahana & Taman Rekreasi Resmi",
+    title: "Cari Atraksi & Wahana Favoritmu.",
+    subtitle:
+      "Akses cepat tanpa antre loket untuk theme park terbesar, waterpark tropis, dan wahana petualangan seru untuk liburan tak terlupakan.",
+    placeholder: "Cari nama wahana, waterpark, theme park (contoh: Dufan Ancol, Waterbom Bali, Trans Studio)...",
+    unit: "wahana rekreasi",
+  },
+  "Musik & Konser": {
+    tag: "Katalog Tiket Terlengkap & Resmi",
+    title: "Cari Konser Favoritmu.",
+    subtitle:
+      "Jelajahi konser artis favoritmu dan dapatkan tiket resmi dengan kemudahan pembayaran instan tanpa perlu antre tiket fisik.",
+    placeholder: "Cari artis, venue, atau kota (contoh: Jakarta, Tulus, Senayan)...",
+    unit: "konser",
+  },
+};
 
 const TESTIMONIALS = [
   {
@@ -627,6 +287,7 @@ function Highlighted({ text, query }: { text: string; query: string }) {
 /* ------------------------------------------------------------------ */
 
 export default function ConcertGoLandingPage() {
+  const [selectedCategory, setSelectedCategory] = useState<Category>("Festival Musik");
   const [query, setQuery] = useState("");
   const [genre, setGenre] = useState<string>("Semua Genre");
   const [city, setCity] = useState<string>("Semua Kota");
@@ -638,28 +299,72 @@ export default function ConcertGoLandingPage() {
   const [selectedEventForDetail, setSelectedEventForDetail] = useState<EventItem | null>(null);
   const [selectedEventForLogin, setSelectedEventForLogin] = useState<EventItem | null>(null);
 
+  // Filter pool berdasarkan kategori yang dipilih
+  const totalInCategory = useMemo(() => {
+    return EVENTS.filter((e) => e.category === selectedCategory).length;
+  }, [selectedCategory]);
+
+  const availableGenres = useMemo(() => {
+    const pool = EVENTS.filter((e) => e.category === selectedCategory);
+    return Array.from(new Set(pool.map((e) => e.genre)));
+  }, [selectedCategory]);
+
+  const availableCities = useMemo(() => {
+    const pool = EVENTS.filter((e) => e.category === selectedCategory);
+    return Array.from(new Set(pool.map((e) => e.city)));
+  }, [selectedCategory]);
+
   const filtered = useMemo(() => {
     return EVENTS.filter((e) => {
+      const matchesCategory = e.category === selectedCategory;
+
       const q = query.trim().toLowerCase();
       const matchesQuery =
         !q ||
         e.title.toLowerCase().includes(q) ||
         e.artist.toLowerCase().includes(q) ||
         e.city.toLowerCase().includes(q) ||
-        e.venue.toLowerCase().includes(q);
+        e.venue.toLowerCase().includes(q) ||
+        e.genre.toLowerCase().includes(q);
+
       const matchesGenre = genre === "Semua Genre" || e.genre === genre;
       const matchesCity = city === "Semua Kota" || e.city === city;
-      return matchesQuery && matchesGenre && matchesCity;
+
+      return matchesCategory && matchesQuery && matchesGenre && matchesCity;
     }).sort((a, b) => {
       if (sort === "Harga terendah") return a.priceFrom - b.priceFrom;
       if (sort === "Harga tertinggi") return b.priceFrom - a.priceFrom;
       return parseEventDate(a.date) - parseEventDate(b.date);
     });
-  }, [query, genre, city, sort]);
+  }, [selectedCategory, query, genre, city, sort]);
 
-  const recommended = filtered.slice(0, 4);
-  const popular = filtered.slice(2, 6).length ? filtered.slice(2, 6) : filtered.slice(0, 4);
-  const mostLiked = filtered.slice(4, 8).length ? filtered.slice(4, 8) : filtered.slice(0, 4);
+  // 3 Pools data konser untuk 3 baris/seksi: Rekomendasi, Populer, Difavoritkan
+  const rekomendasiEvents = filtered;
+
+  const populerEvents = useMemo(() => {
+    return [...filtered].sort((a, b) => b.soldPercentage - a.soldPercentage);
+  }, [filtered]);
+
+  const favoritEvents = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      const countA = parseFloat(a.interestedCount) || 0;
+      const countB = parseFloat(b.interestedCount) || 0;
+      return countB - countA;
+    });
+  }, [filtered]);
+
+  function handleSelectCategory(cat: Category) {
+    setSelectedCategory(cat);
+    setGenre("Semua Genre");
+  }
+
+  function resetAllFilters() {
+    setQuery("");
+    setGenre("Semua Genre");
+    setCity("Semua Kota");
+    setSort("Tanggal terdekat");
+    setSelectedCategory("Festival Musik");
+  }
 
   function toggleFavorite(id: string) {
     setFavorites((prev) => {
@@ -686,56 +391,91 @@ export default function ConcertGoLandingPage() {
         />
 
         {/* Rail Kategori Interaktif */}
-        <CategoryRail />
+        <CategoryRail active={selectedCategory} onSelect={handleSelectCategory} />
 
         {/* Bar Pencarian & Filter */}
         <SearchHero
+          selectedCategory={selectedCategory}
           query={query}
           setQuery={setQuery}
           genre={genre}
           setGenre={setGenre}
+          availableGenres={availableGenres}
           city={city}
           setCity={setCity}
+          availableCities={availableCities}
           sort={sort}
           setSort={setSort}
           resultCount={filtered.length}
+          totalInCategory={totalInCategory}
           onSubmit={jumpToResults}
         />
 
-        {/* Tampilan Visual Event Konser (Dengan Poster & Detail Interaktif) */}
-        <div id="konser" className="space-y-8">
-          <EventSection
-            id="rekomendasi"
-            title="Rekomendasi Konser Pilihan"
-            subtitle="Konser terbaik dengan animo penonton tertinggi yang paling direkomendasikan kurator kami."
-            events={recommended}
-            favorites={favorites}
-            onToggleFavorite={toggleFavorite}
-            onOpenDetail={(ev) => setSelectedEventForDetail(ev)}
-            onBuyTicket={(ev) => setSelectedEventForLogin(ev)}
-          />
+        {/* Section Konser dengan 3 Baris / Bagian: Rekomendasi, Populer, dan Difavoritkan */}
+        <div id="konser" className="space-y-12 sm:space-y-16">
+          {filtered.length === 0 ? (
+            <section className="mx-auto max-w-7xl scroll-mt-24 px-6 py-12 text-center">
+              <div className="mx-auto max-w-md rounded-3xl border border-[#e6d9bf] bg-white/70 p-8 shadow-sm">
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#efe4cf] text-2xl text-[#d9691f]">
+                  🔍
+                </div>
+                <h3 className="mt-4 font-[var(--font-display,serif)] text-xl font-bold text-[#241608]">
+                  Tidak Ada Acara Ditemukan
+                </h3>
+                <p className="mt-2 text-sm text-[#8a7a63]">
+                  Belum ada acara yang cocok dengan kombinasi filter atau kata kunci pencarianmu saat ini.
+                </p>
+                <button
+                  type="button"
+                  onClick={resetAllFilters}
+                  className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#d9691f] px-5 py-2 text-xs font-semibold text-white shadow-md transition hover:bg-[#c45c16] cursor-pointer"
+                >
+                  Reset Semua Filter
+                </button>
+              </div>
+            </section>
+          ) : (
+            <>
+              {/* Section 1: Rekomendasi */}
+              <CarouselEventSection
+                id="rekomendasi"
+                badge="⭐ Rekomendasi Pilihan"
+                title={`Rekomendasi ${selectedCategory}`}
+                subtitle={`Pilihan acara ${selectedCategory.toLowerCase()} terbaik dan paling pas untukmu.`}
+                events={rekomendasiEvents}
+                favorites={favorites}
+                onToggleFavorite={toggleFavorite}
+                onOpenDetail={(ev) => setSelectedEventForDetail(ev)}
+                onBuyTicket={(ev) => setSelectedEventForLogin(ev)}
+              />
 
-          <EventSection
-            id="populer"
-            title="Konser Paling Populer"
-            subtitle="Jadwal konser dengan penjualan tiket paling cepat habis di berbagai kota besar."
-            events={popular}
-            favorites={favorites}
-            onToggleFavorite={toggleFavorite}
-            onOpenDetail={(ev) => setSelectedEventForDetail(ev)}
-            onBuyTicket={(ev) => setSelectedEventForLogin(ev)}
-          />
+              {/* Section 2: Paling Populer */}
+              <CarouselEventSection
+                id="populer"
+                badge="🔥 Paling Populer & Sedang Tren"
+                title={`${selectedCategory} Paling Populer`}
+                subtitle={`Tiket ${selectedCategory.toLowerCase()} dengan penjualan tertinggi yang paling cepat ludes minggu ini.`}
+                events={populerEvents}
+                favorites={favorites}
+                onToggleFavorite={toggleFavorite}
+                onOpenDetail={(ev) => setSelectedEventForDetail(ev)}
+                onBuyTicket={(ev) => setSelectedEventForLogin(ev)}
+              />
 
-          <EventSection
-            id="disukai"
-            title="Paling Banyak Difavoritkan"
-            subtitle="Daftar penampilan musik dengan rating ulasan tertinggi dan komentar paling positif."
-            events={mostLiked}
-            favorites={favorites}
-            onToggleFavorite={toggleFavorite}
-            onOpenDetail={(ev) => setSelectedEventForDetail(ev)}
-            onBuyTicket={(ev) => setSelectedEventForLogin(ev)}
-          />
+              {/* Section 3: Paling Banyak Difavoritkan */}
+              <CarouselEventSection
+                id="difavoritkan"
+                badge="❤️ Paling Banyak Difavoritkan"
+                title={`${selectedCategory} Terfavorit`}
+                subtitle={`Disukai ribuan penikmat ${selectedCategory.toLowerCase()} dan masuk ke dalam wishlist terbanyak.`}
+                events={favoritEvents}
+                favorites={favorites}
+                onToggleFavorite={toggleFavorite}
+                onOpenDetail={(ev) => setSelectedEventForDetail(ev)}
+                onBuyTicket={(ev) => setSelectedEventForLogin(ev)}
+              />
+            </>
+          )}
         </div>
 
         {/* Banner Promo & Voucher Diskon */}
@@ -1090,12 +830,16 @@ function HeroCarousel({
 /*  Category Rail                                                      */
 /* ------------------------------------------------------------------ */
 
-function CategoryRail() {
-  const [active, setActive] = useState<Category>("Musik & Konser");
-
+function CategoryRail({
+  active,
+  onSelect,
+}: {
+  active: Category;
+  onSelect: (cat: Category) => void;
+}) {
   return (
-    <section className="mx-auto max-w-7xl overflow-x-auto px-6 py-8">
-      <div className="flex min-w-max items-center justify-start gap-4 pb-2 sm:justify-center">
+    <section className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
         {CATEGORIES.map((c, idx) => {
           const isSelected = active === c.label;
           return (
@@ -1103,25 +847,25 @@ function CategoryRail() {
               key={c.label}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.04, duration: 0.3 }}
-              whileHover={{ y: -4, scale: 1.03 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => setActive(c.label)}
-              className={`group flex flex-col items-center gap-2 rounded-2xl p-2.5 transition-colors focus:outline-hidden ${
-                isSelected ? "bg-white/80 shadow-xs" : "hover:bg-white/40"
+              transition={{ delay: idx * 0.02, duration: 0.25 }}
+              whileHover={{ y: -3, scale: 1.03 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => onSelect(c.label)}
+              className={`group flex flex-col items-center gap-1.5 sm:gap-2 rounded-2xl p-2 sm:p-2.5 transition-all focus:outline-hidden cursor-pointer ${
+                isSelected ? "bg-white shadow-md shadow-[#241608]/8 ring-2 ring-[#d9691f]/35" : "hover:bg-white/40"
               }`}
             >
               <span
-                className={`flex h-13 w-13 items-center justify-center rounded-2xl border transition-all ${
+                className={`flex h-11 w-11 sm:h-13 sm:w-13 items-center justify-center rounded-2xl border transition-all ${
                   isSelected
-                    ? "border-[#d9691f] bg-[#d9691f] text-[#f6efe1] shadow-md shadow-[#d9691f]/20"
+                    ? "border-[#d9691f] bg-[#d9691f] text-[#f6efe1] shadow-md shadow-[#d9691f]/25 scale-105"
                     : "border-[#e6d9bf] bg-[#efe4cf] text-[#4a3a26] group-hover:border-[#d9691f] group-hover:bg-[#f6efe1]"
                 }`}
               >
                 {c.icon}
               </span>
               <span
-                className={`text-[12px] font-medium leading-tight ${
+                className={`text-[11px] sm:text-[12px] font-medium leading-tight whitespace-nowrap transition-colors ${
                   isSelected ? "font-bold text-[#d9691f]" : "text-[#4a3a26]"
                 }`}
               >
@@ -1149,13 +893,15 @@ type Suggestion = {
   event?: EventItem;
 };
 
-function buildSuggestions(query: string): Suggestion[] {
+function buildSuggestions(query: string, category: Category): Suggestion[] {
   const q = query.trim().toLowerCase();
   if (!q) return [];
 
+  const pool = EVENTS.filter((e) => e.category === category);
+
   const results: Suggestion[] = [];
 
-  for (const e of EVENTS) {
+  for (const e of pool) {
     const hit =
       e.title.toLowerCase().includes(q) ||
       e.artist.toLowerCase().includes(q) ||
@@ -1171,26 +917,28 @@ function buildSuggestions(query: string): Suggestion[] {
     }
   }
 
-  for (const c of CITIES) {
+  const poolCities = Array.from(new Set(pool.map((e) => e.city)));
+  for (const c of poolCities) {
     if (c.toLowerCase().includes(q) && !results.some((r) => r.kind === "city" && r.label === c)) {
-      const count = EVENTS.filter((e) => e.city === c).length;
+      const count = pool.filter((e) => e.city === c).length;
       results.push({
         key: `city-${c}`,
         kind: "city",
         label: c,
-        meta: `${count} konser tersedia`,
+        meta: `${count} acara tersedia`,
       });
     }
   }
 
-  for (const g of GENRES) {
+  const poolGenres = Array.from(new Set(pool.map((e) => e.genre)));
+  for (const g of poolGenres) {
     if (g.toLowerCase().includes(q)) {
-      const count = EVENTS.filter((e) => e.genre === g).length;
+      const count = pool.filter((e) => e.genre === g).length;
       results.push({
         key: `genre-${g}`,
         kind: "genre",
         label: g,
-        meta: `${count} konser pilihan`,
+        meta: `${count} acara pilihan`,
       });
     }
   }
@@ -1199,24 +947,48 @@ function buildSuggestions(query: string): Suggestion[] {
 }
 
 function SearchHero(props: {
+  selectedCategory: Category;
   query: string;
   setQuery: (v: string) => void;
   genre: string;
   setGenre: (v: string) => void;
+  availableGenres: string[];
   city: string;
   setCity: (v: string) => void;
+  availableCities: string[];
   sort: string;
   setSort: (v: string) => void;
   resultCount: number;
+  totalInCategory: number;
   onSubmit: () => void;
 }) {
-  const { query, setQuery, genre, setGenre, city, setCity, sort, setSort, resultCount, onSubmit } = props;
+  const {
+    selectedCategory,
+    query,
+    setQuery,
+    genre,
+    setGenre,
+    availableGenres,
+    city,
+    setCity,
+    availableCities,
+    sort,
+    setSort,
+    resultCount,
+    totalInCategory,
+    onSubmit,
+  } = props;
+
+  const meta = CATEGORY_META[selectedCategory] ?? CATEGORY_META["Festival Musik"];
 
   const [isOpen, setIsOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const suggestions = useMemo(() => buildSuggestions(query), [query]);
+  const suggestions = useMemo(
+    () => buildSuggestions(query, selectedCategory),
+    [query, selectedCategory]
+  );
 
   useEffect(() => {
     setHighlightIndex(0);
@@ -1281,21 +1053,21 @@ function SearchHero(props: {
 
   return (
     <motion.section
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5 }}
+      key={selectedCategory}
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35 }}
       className="mx-auto max-w-3xl px-6 pb-12 pt-4 text-center"
     >
       <span className="inline-flex items-center gap-2 rounded-full border border-[#d9691f]/30 bg-[#efe4cf]/80 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-[#b5772f]">
-        <IconSparklesSmall /> Tiket Resmi · Dijamin Anti Calo
+        <IconSparklesSmall /> {meta.tag}
       </span>
 
-      <h1 className="mt-4 font-[var(--font-display,serif)] text-3xl font-bold leading-tight text-[#241608] md:text-5xl">
-        Konser Favoritmu, Satu Sentuhan Lagi.
-      </h1>
+      <h2 className="mt-4 font-[var(--font-display,serif)] text-3xl font-bold leading-tight text-[#241608] md:text-5xl">
+        {meta.title}
+      </h2>
       <p className="mx-auto mt-3 max-w-lg text-sm text-[#5a4a35] md:text-base">
-        Eksplorasi ratusan jadwal konser musik, festival akbar, dan tur musisi idola di seluruh Indonesia dengan jaminan tiket resmi 100%.
+        {meta.subtitle}
       </p>
 
       {/* Input Search Box */}
@@ -1310,7 +1082,7 @@ function SearchHero(props: {
             }}
             onFocus={() => setIsOpen(true)}
             onKeyDown={handleKeyDown}
-            placeholder="Cari artis, venue, atau kota (contoh: Jakarta, Senayan, Tulus)..."
+            placeholder={meta.placeholder}
             role="combobox"
             aria-expanded={showDropdown}
             aria-controls="search-suggestions"
@@ -1372,7 +1144,7 @@ function SearchHero(props: {
                       {s.meta && <span className="block truncate text-xs text-[#8a7a63]">{s.meta}</span>}
                     </span>
                     <span className="shrink-0 rounded-full bg-[#f1e6d0] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#8a7a63]">
-                      {s.kind === "city" ? "Kota" : s.kind === "genre" ? "Genre" : "Konser"}
+                      {s.kind === "city" ? "Kota" : s.kind === "genre" ? "Kategori" : "Acara"}
                     </span>
                   </button>
                 </li>
@@ -1409,7 +1181,7 @@ function SearchHero(props: {
           className="rounded-full border border-[#e6d9bf] bg-white/80 px-3.5 py-1.5 text-[#4a3a26] transition-colors focus:border-[#d9691f] focus:outline-hidden"
         >
           <option>Semua Genre</option>
-          {GENRES.map((g) => (
+          {availableGenres.map((g) => (
             <option key={g}>{g}</option>
           ))}
         </select>
@@ -1420,7 +1192,7 @@ function SearchHero(props: {
           className="rounded-full border border-[#e6d9bf] bg-white/80 px-3.5 py-1.5 text-[#4a3a26] transition-colors focus:border-[#d9691f] focus:outline-hidden"
         >
           <option>Semua Kota</option>
-          {CITIES.map((c) => (
+          {availableCities.map((c) => (
             <option key={c}>{c}</option>
           ))}
         </select>
@@ -1437,18 +1209,19 @@ function SearchHero(props: {
       </div>
 
       <p className="mt-3 text-xs text-[#8a7a63]">
-        Menampilkan <span className="font-semibold text-[#241608]">{resultCount}</span> dari {EVENTS.length} konser tersedia
+        Menampilkan <span className="font-semibold text-[#241608]">{resultCount}</span> dari {totalInCategory} {meta.unit} tersedia
       </p>
     </motion.section>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  Event Section & Dummy Event Visual Cards                           */
+/*  Carousel Event Section & Interactive Cards                        */
 /* ------------------------------------------------------------------ */
 
-function EventSection({
+function CarouselEventSection({
   id,
+  badge,
   title,
   subtitle,
   events,
@@ -1458,6 +1231,7 @@ function EventSection({
   onBuyTicket,
 }: {
   id: string;
+  badge: string;
   title: string;
   subtitle?: string;
   events: EventItem[];
@@ -1466,41 +1240,132 @@ function EventSection({
   onOpenDetail: (event: EventItem) => void;
   onBuyTicket: (event: EventItem) => void;
 }) {
-  if (events.length === 0) {
-    return (
-      <section id={id} className="mx-auto max-w-7xl scroll-mt-24 px-6 py-8">
-        <h2 className="font-[var(--font-display,serif)] text-2xl font-bold">{title}</h2>
-        <p className="mt-2 text-sm text-[#8a7a63]">
-          Belum ada konser yang cocok dengan filter pencarianmu saat ini. Coba ubah kota atau genre.
-        </p>
-      </section>
-    );
+  const ITEMS_PER_PAGE = 4;
+  const [currentPage, setCurrentPage] = useState(0);
+  const [direction, setDirection] = useState(0);
+
+  const totalPages = Math.max(1, Math.ceil(events.length / ITEMS_PER_PAGE));
+
+  // Reset page jika hasil filter berkurang
+  useEffect(() => {
+    if (currentPage >= totalPages) {
+      setCurrentPage(0);
+    }
+  }, [totalPages, currentPage]);
+
+  const startIndex = currentPage * ITEMS_PER_PAGE;
+  const currentItems = events.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  function handlePrev() {
+    setDirection(-1);
+    setCurrentPage((prev) => (prev === 0 ? totalPages - 1 : prev - 1));
   }
 
+  function handleNext() {
+    setDirection(1);
+    setCurrentPage((prev) => (prev + 1) % totalPages);
+  }
+
+  if (events.length === 0) return null;
+
   return (
-    <section id={id} className="mx-auto max-w-7xl scroll-mt-24 px-6 py-8">
-      <div className="mb-6 flex flex-col justify-between gap-1 sm:flex-row sm:items-end">
-        <div>
-          <h2 className="font-[var(--font-display,serif)] text-2xl font-bold text-[#241608] md:text-3xl">
-            {title}
-          </h2>
-          {subtitle && <p className="mt-1 text-xs text-[#5a4a35] md:text-sm">{subtitle}</p>}
+    <section id={id} className="mx-auto max-w-7xl scroll-mt-24 px-4 sm:px-6">
+      {/* Header Bar: Badge, Title, & Subtitle */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-[#d9691f]" />
+          <span className="text-xs font-bold uppercase tracking-wider text-[#d9691f]">
+            {badge} · {events.length} Acara Resmi
+          </span>
         </div>
+        <h2 className="mt-1 font-[var(--font-display,serif)] text-2xl font-bold text-[#241608] md:text-3xl">
+          {title}
+        </h2>
+        {subtitle && (
+          <p className="mt-1 text-xs text-[#5a4a35] md:text-sm">
+            {subtitle}
+          </p>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {events.map((ev, idx) => (
-          <EventCard
-            key={ev.id + title}
-            event={ev}
-            index={idx}
-            isFavorite={favorites.has(ev.id)}
-            onToggleFavorite={() => onToggleFavorite(ev.id)}
-            onOpenDetail={() => onOpenDetail(ev)}
-            onBuy={() => onBuyTicket(ev)}
-          />
-        ))}
+      {/* Grid Container with Floating Side Arrows for Tickets */}
+      <div className="relative">
+        {/* Floating Side Arrow Left */}
+        {totalPages > 1 && (
+          <button
+            type="button"
+            onClick={handlePrev}
+            aria-label="Halaman Sebelumnya"
+            title="Halaman Sebelumnya"
+            className="group absolute -left-3 sm:-left-5 top-1/2 -translate-y-1/2 z-20 flex h-9.5 w-9.5 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-[#e6d9bf] bg-white/95 text-[#241608] shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:border-[#d9691f] hover:bg-[#d9691f] hover:text-white active:scale-95 cursor-pointer"
+          >
+            <IconArrowLeft className="transition-transform group-hover:-translate-x-0.5" />
+          </button>
+        )}
+
+        {/* Floating Side Arrow Right */}
+        {totalPages > 1 && (
+          <button
+            type="button"
+            onClick={handleNext}
+            aria-label="Halaman Selanjutnya"
+            title="Halaman Selanjutnya"
+            className="group absolute -right-3 sm:-right-5 top-1/2 -translate-y-1/2 z-20 flex h-9.5 w-9.5 sm:h-11 sm:w-11 items-center justify-center rounded-full border border-[#e6d9bf] bg-white/95 text-[#241608] shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:border-[#d9691f] hover:bg-[#d9691f] hover:text-white active:scale-95 cursor-pointer"
+          >
+            <IconArrowRight className="transition-transform group-hover:translate-x-0.5" />
+          </button>
+        )}
+
+        {/* Animated Cards Grid */}
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={`${id}-${currentPage}`}
+            custom={direction}
+            initial={{ opacity: 0, x: direction > 0 ? 30 : -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: direction > 0 ? -30 : 30 }}
+            transition={{ duration: 0.28, ease: "easeOut" }}
+            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4"
+          >
+            {currentItems.map((ev, idx) => (
+              <EventCard
+                key={`${id}-${ev.id}-${currentPage}`}
+                event={ev}
+                index={idx}
+                isFavorite={favorites.has(ev.id)}
+                onToggleFavorite={() => onToggleFavorite(ev.id)}
+                onOpenDetail={() => onOpenDetail(ev)}
+                onBuy={() => onBuyTicket(ev)}
+              />
+            ))}
+          </motion.div>
+        </AnimatePresence>
       </div>
+
+      {/* Modern Bottom Dot/Pill Indicators */}
+      {totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-2">
+          {Array.from({ length: totalPages }).map((_, i) => {
+            const isActive = i === currentPage;
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => {
+                  setDirection(i > currentPage ? 1 : -1);
+                  setCurrentPage(i);
+                }}
+                aria-label={`Buka halaman ${i + 1}`}
+                className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
+                  isActive
+                    ? "w-8 bg-[#d9691f] shadow-xs"
+                    : "w-2.5 bg-[#e6d9bf] hover:bg-[#caa885]"
+                }`}
+              />
+            );
+          })}
+        </div>
+      )}
     </section>
   );
 }
@@ -2642,6 +2507,42 @@ function IconX() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
       <path d="M5 5l14 14M19 5 5 19" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconArrowLeft({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+function IconArrowRight({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="m9 18 6-6-6-6" />
     </svg>
   );
 }
