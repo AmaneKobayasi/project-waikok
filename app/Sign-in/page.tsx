@@ -1,28 +1,18 @@
 "use client";
 
 /**
- * ConcertGo — Sign In
- * Single-file Next.js page.
- *
- * Save as: app/sign-in/page.tsx  (route becomes /sign-in)
- *
- * Uses the landing page's warm cream / espresso / terracotta palette and
- * fonts so both pages read as one site.
- *
- * Flow: email + password → (simulated) request → 6-digit verification
- * code step → success. The footer is the same multi-column footer used
- * on the landing page.
- *
- * Requires the same setup as the landing page: Tailwind CSS, the
- * --font-display / --font-body variables in app/layout.tsx, and the
- * logo at public/image/Logo.png.
+ * ConcertGo — Sign In Page
+ * Desain bersih, rapi, dan profesional dengan visual konser, tab switcher,
+ * tombol social login, validasi responsif, dan verifikasi OTP.
  */
 
 import type { FormEvent, JSX, KeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 
 /* ------------------------------------------------------------------ */
-/*  Toast system (tiny, local — no external deps)                      */
+/*  Toast Notification System                                          */
 /* ------------------------------------------------------------------ */
 
 type Toast = { id: number; kind: "success" | "error"; message: string };
@@ -36,7 +26,7 @@ function useToasts() {
     setToasts((t) => [...t, { id, kind, message }]);
     setTimeout(() => {
       setToasts((t) => t.filter((toast) => toast.id !== id));
-    }, 3800);
+    }, 4000);
   }
 
   function dismiss(id: number) {
@@ -48,49 +38,40 @@ function useToasts() {
 
 function ToastStack({ toasts, dismiss }: { toasts: Toast[]; dismiss: (id: number) => void }) {
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-4 z-50 flex flex-col items-center gap-2 px-4">
-      {toasts.map((t) => (
-        <div
-          key={t.id}
-          role="status"
-          className={`toast-in pointer-events-auto flex max-w-sm items-center gap-3 rounded-2xl border px-4 py-3 text-sm shadow-lg ${
-            t.kind === "success"
-              ? "border-[#cfead9] bg-[#f2fbf5] text-[#1f5c37]"
-              : "border-[#f3cfc0] bg-[#fdf2ee] text-[#8a2f14]"
-          }`}
-        >
-          <span className="text-base">{t.kind === "success" ? "✅" : "⚠️"}</span>
-          <span>{t.message}</span>
-          <button
-            onClick={() => dismiss(t.id)}
-            aria-label="Tutup notifikasi"
-            className="ml-1 opacity-50 transition-opacity hover:opacity-100"
+    <div className="pointer-events-none fixed inset-x-0 top-5 z-50 flex flex-col items-center gap-2 px-4">
+      <AnimatePresence>
+        {toasts.map((t) => (
+          <motion.div
+            key={t.id}
+            initial={{ opacity: 0, y: -15, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.25 }}
+            role="status"
+            className={`pointer-events-auto flex max-w-md items-center gap-3 rounded-2xl border px-4 py-3 text-sm shadow-xl backdrop-blur-md ${
+              t.kind === "success"
+                ? "border-emerald-200 bg-emerald-50/95 text-emerald-900"
+                : "border-rose-200 bg-rose-50/95 text-rose-900"
+            }`}
           >
-            ✕
-          </button>
-        </div>
-      ))}
-      <style jsx>{`
-        .toast-in {
-          animation: toast-in 0.25s ease-out;
-        }
-        @keyframes toast-in {
-          from {
-            opacity: 0;
-            transform: translateY(-8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
+            <span className="text-base">{t.kind === "success" ? "✓" : "⚠️"}</span>
+            <span className="font-medium">{t.message}</span>
+            <button
+              onClick={() => dismiss(t.id)}
+              aria-label="Tutup notifikasi"
+              className="ml-auto opacity-60 hover:opacity-100 transition-opacity"
+            >
+              ✕
+            </button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  Page                                                                */
+/*  Main Sign In Page Component                                        */
 /* ------------------------------------------------------------------ */
 
 export default function SignInPage() {
@@ -98,93 +79,77 @@ export default function SignInPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f6efe1] font-[var(--font-body,ui-sans-serif)] text-[#241608]">
-      <SiteHeader />
+      <AuthHeader />
       <ToastStack toasts={toasts} dismiss={dismiss} />
-      <SignInHero onToast={push} />
-      <SiteFooter />
+
+      <main className="relative flex flex-1 items-center justify-center px-4 py-10 md:py-16">
+        {/* Soft Background Accents */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#d9691f]/10 via-[#f6efe1] to-[#f1e6d0]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -left-20 top-20 h-72 w-72 rounded-full bg-[#d9691f]/15 blur-3xl"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-20 bottom-20 h-72 w-72 rounded-full bg-[#241209]/15 blur-3xl"
+        />
+
+        <SignInCard onToast={push} />
+      </main>
+
+      <AuthFooter />
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  Header — logo only, no nav links, "Daftar" outline button          */
+/*  Auth Header (Clean Minimal Header)                                 */
 /* ------------------------------------------------------------------ */
 
-function SiteHeader() {
+function AuthHeader() {
   return (
-    <header className="sticky top-0 z-30 border-b border-[#e6d9bf] bg-[#f6efe1]/95 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <a href="/#top" className="flex items-center gap-2">
+    <header className="sticky top-0 z-30 border-b border-[#e6d9bf] bg-[#f6efe1]/95 backdrop-blur-md">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <Link href="/" className="flex items-center gap-2.5 transition-transform hover:scale-105">
           <img src="/image/Logo.png" alt="ConcertGo" className="h-8 w-auto" />
-          <span className="font-[var(--font-display,serif)] text-lg">
-            <span className="font-semibold">Concert</span>
-            <span className="font-normal text-[#d9691f]">Go</span>
+          <span className="font-[var(--font-display,serif)] text-xl font-bold tracking-tight text-[#241608]">
+            <span>Concert</span>
+            <span className="text-[#d9691f]">Go</span>
           </span>
-        </a>
+        </Link>
 
-        <a
-          href="/Sign-up"
-          className="rounded-full border-2 border-[#241608] bg-[#241608] px-5 py-2 text-sm font-medium text-[#f6efe1] transition-colors hover:bg-transparent hover:text-[#241608]"
-        >
-          Daftar
-        </a>
+        <div className="flex items-center gap-3">
+          <span className="hidden text-xs text-[#5a4a35] sm:inline">Belum punya akun?</span>
+          <Link
+            href="/Sign-up"
+            className="rounded-full border border-[#241608] px-4 py-1.5 text-xs font-semibold text-[#241608] transition-all hover:bg-[#241608] hover:text-[#f6efe1]"
+          >
+            Daftar Sekarang
+          </Link>
+        </div>
       </div>
     </header>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  Hero section wrapping the login card                               */
-/* ------------------------------------------------------------------ */
-
-function SignInHero({ onToast }: { onToast: (kind: Toast["kind"], msg: string) => void }) {
-  return (
-    <main className="relative flex flex-1 items-center justify-center overflow-hidden px-5 py-16">
-      {/* soft warm gradient backdrop, echoing a dim, blurred stage */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(60% 50% at 50% 0%, rgba(217,105,31,0.14), transparent 70%), radial-gradient(55% 45% at 85% 90%, rgba(58,28,15,0.18), transparent 70%), linear-gradient(180deg, #f6efe1 0%, #f1e6d0 100%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-[#d9691f]/20 blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-24 bottom-10 h-72 w-72 rounded-full bg-[#241209]/25 blur-3xl"
-      />
-
-      <LoginCard onToast={onToast} />
-    </main>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Login card — two steps: credentials, then verification code        */
+/*  Sign In Card (Split View: Visual Showcase + Clean Form)            */
 /* ------------------------------------------------------------------ */
 
 type Step = "credentials" | "otp";
 type FieldErrors = { email?: string; password?: string };
 
-function LoginCard({ onToast }: { onToast: (kind: Toast["kind"], msg: string) => void }) {
+function SignInCard({ onToast }: { onToast: (kind: Toast["kind"], msg: string) => void }) {
   const [step, setStep] = useState<Step>("credentials");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [errors, setErrors] = useState<FieldErrors>({});
-  const [shakeField, setShakeField] = useState<keyof FieldErrors | null>(null);
   const [loading, setLoading] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 20);
-    return () => clearTimeout(t);
-  }, []);
 
   function validate(): FieldErrors {
     const next: FieldErrors = {};
@@ -193,7 +158,7 @@ function LoginCard({ onToast }: { onToast: (kind: Toast["kind"], msg: string) =>
     if (!email.trim()) {
       next.email = "Alamat email wajib diisi.";
     } else if (!emailPattern.test(email.trim())) {
-      next.email = "Format email belum sesuai, contoh: nama@email.com";
+      next.email = "Format email tidak valid (contoh: nama@email.com).";
     }
 
     if (!password) {
@@ -205,27 +170,18 @@ function LoginCard({ onToast }: { onToast: (kind: Toast["kind"], msg: string) =>
     return next;
   }
 
-  function triggerShake(field: keyof FieldErrors) {
-    setShakeField(field);
-    setTimeout(() => setShakeField(null), 420);
-  }
-
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const nextErrors = validate();
     setErrors(nextErrors);
 
-    if (nextErrors.email) triggerShake("email");
-    else if (nextErrors.password) triggerShake("password");
-
     if (Object.keys(nextErrors).length > 0) {
-      onToast("error", "Coba periksa lagi ya, ada isian yang belum pas.");
+      onToast("error", "Silakan lengkapi data yang belum sesuai.");
       return;
     }
 
     setLoading(true);
-    // Simulated request — wire this up to your real auth endpoint.
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     setLoading(false);
 
     onToast("success", `Kode verifikasi telah dikirim ke ${email.trim()}.`);
@@ -233,170 +189,233 @@ function LoginCard({ onToast }: { onToast: (kind: Toast["kind"], msg: string) =>
   }
 
   function handleSocial(provider: "Google" | "Facebook") {
-    onToast("success", `Menghubungkan ke akun ${provider}...`);
+    onToast("success", `Menghubungkan dengan akun ${provider}...`);
   }
 
   return (
-    <div
-      className={`relative w-full max-w-[440px] rounded-3xl border border-[#e6d9bf] bg-white/85 p-10 shadow-[0_20px_60px_rgba(36,22,8,0.15)] backdrop-blur-md transition-all duration-500 sm:p-10 ${
-        mounted ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
-      }`}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="relative z-10 w-full max-w-4xl overflow-hidden rounded-3xl border border-[#e6d9bf] bg-white shadow-2xl md:grid md:grid-cols-12"
     >
-      {step === "credentials" ? (
-        <>
-          {/* Header */}
-          <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#f1e6d0]">
-              <IconTicketPerson />
-            </div>
-            <h1 className="font-[var(--font-display,serif)] text-[26px] font-semibold leading-tight text-[#241608] sm:text-[28px]">
-              Selamat Datang Kembali, Pencinta Musik! 🎶
-            </h1>
-            <p className="mt-2 text-sm leading-relaxed text-[#5a4a35]">
-              Masuk ke akun ConcertGo-mu dan lanjutkan petualangan musikmu.
-            </p>
-          </div>
+      {/* Left Column: Visual Concert Banner Showcase (Hidden on Mobile) */}
+      <div className="relative hidden md:col-span-5 md:flex md:flex-col md:justify-between p-8 text-[#f6efe1] overflow-hidden bg-[#241209]">
+        <img
+          src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=1200&auto=format&fit=crop"
+          alt="Concert stage crowd"
+          className="absolute inset-0 h-full w-full object-cover opacity-35"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1b0d05] via-[#241209]/80 to-transparent" />
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} noValidate className="space-y-5">
-            <FormField
-              label="Alamat Email"
-              error={errors.email}
-              shake={shakeField === "email"}
-              icon={<IconEnvelope />}
-            >
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tulis emailmu di sini"
-                autoComplete="email"
-                className="w-full bg-transparent py-3 pl-10 pr-3 text-sm text-[#241608] placeholder:text-[#a1917a] focus:outline-none"
-              />
-            </FormField>
+        {/* Top Tag */}
+        <div className="relative z-10">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-[#d9a26a] backdrop-blur-md border border-white/10">
+            <span className="h-2 w-2 rounded-full bg-[#d9691f] animate-pulse" />
+            TIKET RESMI 100%
+          </span>
+        </div>
 
-            <FormField
-              label="Kata Sandi"
-              error={errors.password}
-              shake={shakeField === "password"}
-              icon={<IconLock />}
-              trailing={
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((s) => !s)}
-                  aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
-                  className="pr-3 text-[#8a7a63] transition-colors hover:text-[#241608]"
-                >
-                  {showPassword ? <IconEyeOff /> : <IconEye />}
-                </button>
-              }
-            >
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                className="w-full bg-transparent py-3 pl-10 pr-3 text-sm text-[#241608] placeholder:text-[#a1917a] focus:outline-none"
-              />
-            </FormField>
+        {/* Middle Highlight */}
+        <div className="relative z-10 my-auto py-8">
+          <h2 className="font-[var(--font-display,serif)] text-2xl font-bold leading-snug">
+            Amankan Kursi Konser Idola Tanpa Ribet
+          </h2>
+          <p className="mt-3 text-xs leading-relaxed text-[#c4b59d]">
+            Satu akun untuk ribuan pertunjukan musik, festival akbar, dan tur musisi favorit di seluruh Indonesia.
+          </p>
+        </div>
 
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 text-[#5a4a35]">
-                <input
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                  className="h-4 w-4 rounded border-[#c9b48b] accent-[#d9691f]"
-                />
-                Ingat saya
-              </label>
-              <a href="/reset-password" className="font-medium text-[#b5772f] hover:text-[#d9691f]">
-                Lupa kata sandi? Reset di sini
-              </a>
+        {/* Bottom Social Proof */}
+        <div className="relative z-10 rounded-2xl bg-white/10 p-3.5 backdrop-blur-md border border-white/10 text-xs">
+          <div className="flex text-amber-400 gap-1 text-xs mb-1">★★★★★</div>
+          <p className="text-white/90 font-medium leading-relaxed">
+            &ldquo;Checkout tiket tercepat, barcode resmi langsung masuk email tanpa antrean calo.&rdquo;
+          </p>
+          <p className="mt-2 text-[11px] text-[#d9a26a] font-semibold">500.000+ Penggemar Terdaftar</p>
+        </div>
+      </div>
+
+      {/* Right Column: Clean Form Container */}
+      <div className="p-7 sm:p-10 md:col-span-7 flex flex-col justify-center bg-white">
+        {step === "credentials" ? (
+          <>
+            {/* Top Switch Tabs (Masuk vs Daftar) */}
+            <div className="flex items-center rounded-2xl bg-[#efe4cf]/60 p-1 mb-8">
+              <span className="flex-1 text-center py-2 rounded-xl text-xs font-bold bg-white text-[#241608] shadow-xs">
+                Masuk
+              </span>
+              <Link
+                href="/Sign-up"
+                className="flex-1 text-center py-2 rounded-xl text-xs font-semibold text-[#5a4a35] hover:text-[#241608] transition-colors"
+              >
+                Daftar Akun
+              </Link>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#241209] to-[#d9691f] py-3.5 text-sm font-semibold text-[#f6efe1] shadow-[0_10px_30px_rgba(217,105,31,0.35)] transition-all hover:scale-[1.02] hover:shadow-[0_14px_38px_rgba(217,105,31,0.45)] active:scale-[0.99] disabled:opacity-70"
-            >
-              {loading && <IconSpinner />}
-              {loading ? "Memproses..." : "Masuk ke Akun"}
-            </button>
-
-            <div className="flex items-center gap-3 py-1 text-xs uppercase tracking-wide text-[#a1917a]">
-              <span className="h-px flex-1 bg-[#e6d9bf]" />
-              atau masuk dengan
-              <span className="h-px flex-1 bg-[#e6d9bf]" />
+            {/* Header Text */}
+            <div className="mb-6">
+              <h1 className="font-[var(--font-display,serif)] text-2xl font-bold text-[#241608]">
+                Selamat Datang Kembali
+              </h1>
+              <p className="mt-1 text-xs text-[#5a4a35]">
+                Masukkan alamat email dan kata sandi untuk mengakses akunmu.
+              </p>
             </div>
 
-            <div className="space-y-3">
+            {/* Social Login Buttons */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
               <button
                 type="button"
                 onClick={() => handleSocial("Google")}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-[#e6d9bf] py-3 text-sm font-medium text-[#241608] transition-colors hover:border-[#4285F4] hover:bg-[#4285F4]/5"
+                className="flex items-center justify-center gap-2 rounded-xl border border-[#e6d9bf] bg-[#fbf8f2] py-2.5 px-3 text-xs font-semibold text-[#241608] transition-all hover:bg-white hover:border-[#d9691f]/50 hover:shadow-xs"
               >
-                <IconGoogle /> Masuk dengan Google
+                <IconGoogle />
+                <span>Google</span>
               </button>
+
               <button
                 type="button"
                 onClick={() => handleSocial("Facebook")}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full border-2 border-[#e6d9bf] py-3 text-sm font-medium text-[#241608] transition-colors hover:border-[#1877F2] hover:bg-[#1877F2]/5"
+                className="flex items-center justify-center gap-2 rounded-xl border border-[#e6d9bf] bg-[#fbf8f2] py-2.5 px-3 text-xs font-semibold text-[#241608] transition-all hover:bg-white hover:border-[#1877F2]/50 hover:shadow-xs"
               >
-                <IconFacebook /> Masuk dengan Facebook
+                <IconFacebook />
+                <span>Facebook</span>
               </button>
             </div>
-          </form>
 
-          <p className="mt-7 text-center text-sm text-[#5a4a35]">
-            Belum punya akun?{" "}
-            <a href="/sign-up" className="font-semibold text-[#c94f6d] hover:text-[#a63d57]">
-              Yuk, daftar sekarang!
-            </a>
-          </p>
-        </>
-      ) : (
-        <VerificationStep
-          email={email}
-          onBack={() => setStep("credentials")}
-          onToast={onToast}
-        />
-      )}
+            <div className="relative mb-6 flex items-center justify-center">
+              <span className="absolute inset-x-0 h-px bg-[#e6d9bf]" />
+              <span className="relative bg-white px-3 text-[11px] font-medium uppercase tracking-wider text-[#8a7a63]">
+                atau dengan email
+              </span>
+            </div>
 
-      <style jsx>{`
-        @keyframes shake {
-          10%,
-          90% {
-            transform: translateX(-1px);
-          }
-          20%,
-          80% {
-            transform: translateX(2px);
-          }
-          30%,
-          50%,
-          70% {
-            transform: translateX(-4px);
-          }
-          40%,
-          60% {
-            transform: translateX(4px);
-          }
-        }
-        :global(.field-shake) {
-          animation: shake 0.42s ease-in-out;
-        }
-      `}</style>
-    </div>
+            {/* Credential Form */}
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#4a3a26] mb-1.5">
+                  Alamat Email
+                </label>
+                <div
+                  className={`relative flex items-center rounded-xl border transition-all ${
+                    errors.email
+                      ? "border-rose-400 bg-rose-50/30 ring-2 ring-rose-200"
+                      : "border-[#e6d9bf] bg-[#fbf8f2] focus-within:border-[#d9691f] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#d9691f]/20"
+                  }`}
+                >
+                  <span className="pl-3.5 text-[#8a7a63]">
+                    <IconEnvelope />
+                  </span>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
+                    }}
+                    placeholder="nama@email.com"
+                    autoComplete="email"
+                    className="w-full bg-transparent py-2.5 pl-3 pr-4 text-xs sm:text-sm text-[#241608] placeholder:text-[#a1917a] focus:outline-hidden"
+                  />
+                </div>
+                {errors.email && (
+                  <p className="mt-1 text-[11px] font-medium text-rose-600">{errors.email}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#4a3a26] mb-1.5">
+                  Kata Sandi
+                </label>
+                <div
+                  className={`relative flex items-center rounded-xl border transition-all ${
+                    errors.password
+                      ? "border-rose-400 bg-rose-50/30 ring-2 ring-rose-200"
+                      : "border-[#e6d9bf] bg-[#fbf8f2] focus-within:border-[#d9691f] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#d9691f]/20"
+                  }`}
+                >
+                  <span className="pl-3.5 text-[#8a7a63]">
+                    <IconLock />
+                  </span>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (errors.password) setErrors((prev) => ({ ...prev, password: undefined }));
+                    }}
+                    placeholder="Minimal 8 karakter"
+                    autoComplete="current-password"
+                    className="w-full bg-transparent py-2.5 pl-3 pr-10 text-xs sm:text-sm text-[#241608] placeholder:text-[#a1917a] focus:outline-hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 text-[#8a7a63] hover:text-[#241608] transition-colors"
+                  >
+                    {showPassword ? <IconEyeOff /> : <IconEye />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="mt-1 text-[11px] font-medium text-rose-600">{errors.password}</p>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between text-xs pt-1">
+                <label className="flex items-center gap-2 text-[#5a4a35] cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={remember}
+                    onChange={(e) => setRemember(e.target.checked)}
+                    className="h-4 w-4 rounded-md border-[#c9b48b] text-[#d9691f] accent-[#d9691f] cursor-pointer"
+                  />
+                  <span>Ingat saya di perangkat ini</span>
+                </label>
+                <Link
+                  href="/reset-password"
+                  className="font-medium text-[#d9691f] hover:underline"
+                >
+                  Lupa kata sandi?
+                </Link>
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.015 }}
+                whileTap={{ scale: 0.985 }}
+                type="submit"
+                disabled={loading}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-[#241608] py-3 text-xs sm:text-sm font-semibold text-[#f6efe1] shadow-md transition-colors hover:bg-[#d9691f] disabled:opacity-70"
+              >
+                {loading && <IconSpinner />}
+                {loading ? "Memverifikasi data..." : "Masuk ke Akun"}
+              </motion.button>
+            </form>
+
+            <p className="mt-6 text-center text-xs text-[#5a4a35]">
+              Belum punya akun ConcertGo?{" "}
+              <Link href="/Sign-up" className="font-bold text-[#d9691f] hover:underline">
+                Daftar sekarang
+              </Link>
+            </p>
+          </>
+        ) : (
+          <VerificationStep
+            email={email}
+            onBack={() => setStep("credentials")}
+            onToast={onToast}
+          />
+        )}
+      </div>
+    </motion.div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  Step 2: 6-digit verification code                                  */
+/*  Verification OTP Step                                             */
 /* ------------------------------------------------------------------ */
 
-const OTP_LENGTH = 4;
+const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
 
 function VerificationStep({
@@ -457,15 +476,18 @@ function VerificationStep({
     e.preventDefault();
     const code = digits.join("");
     if (code.length < OTP_LENGTH) {
-      setError("Masukkan semua 6 digit kode verifikasi.");
+      setError("Silakan lengkapi 6 digit kode verifikasi.");
       return;
     }
 
     setVerifying(true);
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     setVerifying(false);
 
-    onToast("success", "Verifikasi berhasil! Selamat datang kembali di ConcertGo.");
+    onToast("success", "Verifikasi berhasil! Mengalihkan ke halaman utama...");
+    setTimeout(() => {
+      window.location.href = "/User/Homepage";
+    }, 1200);
   }
 
   function handleResend() {
@@ -477,23 +499,22 @@ function VerificationStep({
   }
 
   return (
-    <>
-      <div className="mb-8 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#f1e6d0]">
+    <div className="py-2">
+      <div className="text-center mb-6">
+        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#efe4cf] text-[#d9691f]">
           <IconShieldCheck />
         </div>
-        <h1 className="font-[var(--font-display,serif)] text-[26px] font-semibold leading-tight text-[#241608] sm:text-[28px]">
-          Verifikasi Kode
-        </h1>
-        <p className="mt-2 text-sm leading-relaxed text-[#5a4a35]">
-          Kami sudah kirim kode 6 digit ke{" "}
-          <span className="font-medium text-[#241608]">{email || "emailmu"}</span>. Masukkan di
-          bawah untuk lanjut masuk.
+        <h2 className="font-[var(--font-display,serif)] text-2xl font-bold text-[#241608]">
+          Masukkan Kode Verifikasi
+        </h2>
+        <p className="mt-1 text-xs text-[#5a4a35] max-w-sm mx-auto">
+          Kami telah mengirimkan 6 digit kode keamanan ke{" "}
+          <strong className="text-[#241608] font-semibold">{email || "email Anda"}</strong>.
         </p>
       </div>
 
       <form onSubmit={handleVerify} noValidate>
-        <div className="flex justify-center gap-3" onPaste={handlePaste}>
+        <div className="flex justify-center gap-2 sm:gap-3 my-5" onPaste={handlePaste}>
           {digits.map((d, i) => (
             <input
               key={i}
@@ -506,186 +527,75 @@ function VerificationStep({
               value={d}
               onChange={(e) => updateDigit(i, e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, i)}
-              className={`h-16 w-16 rounded-2xl border-2 bg-white/70 text-center text-xl font-semibold text-[#241608] focus:outline-none ${
-                error ? "border-[#d9532f]" : "border-[#e6d9bf] focus:border-[#d9691f]"
+              className={`h-12 w-11 sm:h-13 sm:w-12 rounded-xl border text-center text-lg font-bold text-[#241608] transition-all focus:outline-hidden ${
+                error
+                  ? "border-rose-400 bg-rose-50/50"
+                  : "border-[#e6d9bf] bg-[#fbf8f2] focus:border-[#d9691f] focus:bg-white focus:ring-2 focus:ring-[#d9691f]/20"
               }`}
             />
           ))}
         </div>
-        {error && <p className="mt-2 text-xs font-medium text-[#d9532f]">{error}</p>}
 
-        <button
+        {error && <p className="text-center text-xs font-medium text-rose-600 mb-3">{error}</p>}
+
+        <motion.button
+          whileHover={{ scale: 1.015 }}
+          whileTap={{ scale: 0.985 }}
           type="submit"
           disabled={verifying}
-          className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#241209] to-[#d9691f] py-3.5 text-sm font-semibold text-[#f6efe1] shadow-[0_10px_30px_rgba(217,105,31,0.35)] transition-all hover:scale-[1.02] hover:shadow-[0_14px_38px_rgba(217,105,31,0.45)] active:scale-[0.99] disabled:opacity-70"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#241608] py-3 text-xs sm:text-sm font-semibold text-[#f6efe1] shadow-md transition-colors hover:bg-[#d9691f] disabled:opacity-70"
         >
           {verifying && <IconSpinner />}
-          {verifying ? "Memverifikasi..." : "Verifikasi & Masuk"}
-        </button>
+          {verifying ? "Memverifikasi..." : "Konfirmasi & Masuk"}
+        </motion.button>
 
-        <p className="mt-5 text-center text-sm text-[#5a4a35]">
+        <div className="mt-4 flex flex-col items-center gap-2 text-xs text-[#5a4a35]">
           {resendIn > 0 ? (
-            <>Kirim ulang kode dalam {resendIn} detik</>
+            <span>Kirim ulang kode dalam <strong className="text-[#241608]">{resendIn}s</strong></span>
           ) : (
             <button
               type="button"
               onClick={handleResend}
-              className="font-semibold text-[#b5772f] hover:text-[#d9691f]"
+              className="font-bold text-[#d9691f] hover:underline"
             >
-              Kirim ulang kode
+              Kirim Ulang Kode Sekarang
             </button>
           )}
-        </p>
 
-        <button
-          type="button"
-          onClick={onBack}
-          className="mt-2 w-full text-center text-sm text-[#8a7a63] hover:text-[#241608]"
-        >
-          ← Kembali ke halaman masuk
-        </button>
+          <button
+            type="button"
+            onClick={onBack}
+            className="text-[#8a7a63] hover:text-[#241608] mt-1 transition-colors"
+          >
+            ← Ubah alamat email
+          </button>
+        </div>
       </form>
-    </>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Reusable form field with icon, label, and inline error             */
-/* ------------------------------------------------------------------ */
-
-function FormField({
-  label,
-  icon,
-  trailing,
-  error,
-  shake,
-  children,
-}: {
-  label: string;
-  icon: JSX.Element;
-  trailing?: JSX.Element;
-  error?: string;
-  shake?: boolean;
-  children: JSX.Element;
-}) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-[#8a7a63]">
-        {label}
-      </label>
-      <div
-        className={`flex items-center rounded-2xl border-2 bg-white/70 transition-colors ${
-          error ? "border-[#d9532f]" : "border-[#e6d9bf] focus-within:border-[#d9691f]"
-        } ${shake ? "field-shake" : ""}`}
-      >
-        <span className="pl-3.5 text-[#8a7a63]">{icon}</span>
-        {children}
-        {trailing}
-      </div>
-      {error && <p className="mt-1.5 text-xs font-medium text-[#d9532f]">{error}</p>}
     </div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  Footer — same multi-column footer as the landing page              */
+/*  Auth Footer                                                        */
 /* ------------------------------------------------------------------ */
 
-const FOOTER_COLUMNS: { heading: string; links: { label: string; href: string }[] }[] = [
-  {
-    heading: "Pakai ConcertGo",
-    links: [
-      { label: "Best Offers", href: "#" },
-      { label: "Tempat dengan Promo Terbaik", href: "#" },
-      { label: "Promo", href: "#" },
-      { label: "Help Center", href: "#" },
-      { label: "Privacy Policy", href: "#" },
-      { label: "Terms & Conditions", href: "#" },
-    ],
-  },
-  {
-    heading: "Informasi",
-    links: [
-      { label: "Publish Event di ConcertGo", href: "#" },
-      { label: "Solusi untuk Pemilik Venue", href: "#" },
-      { label: "Download Brochures", href: "#" },
-      { label: "ConcertGo Experience Manager", href: "#" },
-      { label: "Point of Sales", href: "#" },
-      { label: "Ticket Scanner", href: "#" },
-      { label: "Pricing", href: "#" },
-    ],
-  },
-  {
-    heading: "Solusi Bisnis",
-    links: [
-      { label: "New Normal Solution", href: "#" },
-      { label: "Online Event Management", href: "#" },
-      { label: "Sport Venue & Event", href: "#" },
-      { label: "Theme Park", href: "#" },
-      { label: "Tour & Travel", href: "#" },
-      { label: "Exhibition", href: "#" },
-      { label: "Music & Concerts", href: "#" },
-      { label: "Seminar", href: "#" },
-    ],
-  },
-  {
-    heading: "Kenal ConcertGo",
-    links: [
-      { label: "About Us", href: "#" },
-      { label: "Blog", href: "#" },
-      { label: "Careers", href: "#" },
-      { label: "Press Kit", href: "#" },
-    ],
-  },
-];
-
-function SiteFooter() {
+function AuthFooter() {
   return (
-    <footer className="border-t border-[#e6d9bf] bg-[#f1e6d0]">
-      <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 px-6 py-12 sm:grid-cols-2 md:grid-cols-4">
-        {FOOTER_COLUMNS.map((col) => (
-          <div key={col.heading}>
-            <p className="mb-4 text-sm font-semibold text-[#241608]">{col.heading}</p>
-            <ul className="space-y-2.5">
-              {col.links.map((l) => (
-                <li key={l.label}>
-                  <a
-                    href={l.href}
-                    className="text-sm text-[#5a4a35] transition-colors hover:text-[#d9691f]"
-                  >
-                    {l.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 border-t border-[#e6d9bf] px-6 py-6 text-sm text-[#5a4a35] md:flex-row">
-        <a
-          href="/#top"
-          className="flex items-center gap-2 font-[var(--font-display,serif)] text-base text-[#241608]"
-        >
-          <img src="/image/Logo.png" alt="ConcertGo" className="h-7 w-auto" />
-          ConcertGo
-        </a>
-
-        <div className="flex gap-3">
-          <a href="#" aria-label="Instagram" className="opacity-70 hover:opacity-100"><IconInstagram /></a>
-          <a href="#" aria-label="TikTok" className="opacity-70 hover:opacity-100"><IconTikTok /></a>
-          <a href="#" aria-label="X" className="opacity-70 hover:opacity-100"><IconX /></a>
+    <footer className="border-t border-[#e6d9bf] bg-[#f1e6d0] py-6 px-6">
+      <div className="mx-auto flex max-w-6xl flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#5a4a35]">
+        <p>© 2026 ConcertGo Indonesia. Hak cipta dilindungi undang-undang.</p>
+        <div className="flex gap-4 font-medium">
+          <a href="#" className="hover:text-[#d9691f]">Pusat Bantuan</a>
+          <a href="#" className="hover:text-[#d9691f]">Kebijakan Privasi</a>
+          <a href="#" className="hover:text-[#d9691f]">Syarat & Ketentuan</a>
         </div>
       </div>
-      <p className="border-t border-[#e6d9bf] py-4 text-center text-xs text-[#8a7a63]">
-        © 2026 ConcertGo. Semua tiket terverifikasi resmi.
-      </p>
     </footer>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/*  Icons                                                               */
+/*  Inline SVG Icons                                                   */
 /* ------------------------------------------------------------------ */
 
 function IconEnvelope() {
@@ -733,19 +643,10 @@ function IconSpinner() {
     </svg>
   );
 }
-function IconTicketPerson() {
-  return (
-    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#d9691f" strokeWidth="1.6">
-      <circle cx="12" cy="7" r="3" />
-      <path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" strokeLinecap="round" />
-      <rect x="15.5" y="2.5" width="6" height="4" rx="1" transform="rotate(18 15.5 2.5)" />
-    </svg>
-  );
-}
 function IconShieldCheck() {
   return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d9691f" strokeWidth="1.6">
-      <path d="M12 3l7 3v5c0 4.6-3 8.4-7 10-4-1.6-7-5.4-7-10V6l7-3Z" strokeLinejoin="round" />
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" strokeLinejoin="round" />
       <path d="m9 12 2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -779,44 +680,3 @@ function IconFacebook() {
     </svg>
   );
 }
-function IconInstagram() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <rect x="3" y="3" width="18" height="18" rx="5" />
-      <circle cx="12" cy="12" r="4" />
-      <circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-function IconTikTok() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <path d="M14 4v9.5a3.5 3.5 0 1 1-3-3.46" strokeLinecap="round" />
-      <path d="M14 4c.5 2.5 2.2 4 4.5 4.2" strokeLinecap="round" />
-    </svg>
-  );
-}
-function IconX() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-      <path d="M5 5l14 14M19 5 5 19" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-/* ------------------------------------------------------------------
-SETUP NOTES
-
-1. Save this file as app/sign-in/page.tsx (route: /sign-in).
-2. Uses the same Tailwind + font setup as the landing page — no new
-   dependencies. Logo path: public/image/Logo.png.
-3. Flow: submitting email + password simulates a request, then shows
-   a 6-digit verification code step (auto-focus, paste support,
-   backspace-to-previous-field, and a 30s resend cooldown). Replace
-   both `await new Promise(...)` blocks (in handleSubmit and
-   handleVerify) with your real endpoints — request an OTP after
-   credentials check out, then confirm it in handleVerify.
-4. Link targets /sign-up and /reset-password, and all footer column
-   links, are placeholders — point them at your actual routes once
-   those pages exist.
-------------------------------------------------------------------- */
